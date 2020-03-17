@@ -77,7 +77,9 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
         if (t >= tMax) break;
         if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
-            PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
+            //WZR:
+            //PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
+            PhaseFunction *phase = ARENA_ALLOC(arena, CloudMie);
             *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
                                     phase);
             return sigma_s / sigma_t;

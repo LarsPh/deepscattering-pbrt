@@ -97,6 +97,10 @@
 #include "shapes/nurbs.h"
 #include "shapes/paraboloid.h"
 #include "shapes/sphere.h"
+#include "shapes/spherede.h"
+#include "shapes/infinitespheregridde.h"
+#include "shapes/mandelbulbde.h"
+#include "shapes/torusde.h"
 #include "shapes/triangle.h"
 #include "shapes/plymesh.h"
 #include "textures/bilerp.h"
@@ -453,6 +457,18 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     else if (name == "hyperboloid")
         s = CreateHyperboloidShape(object2world, world2object,
                                    reverseOrientation, paramSet);
+    else if (name == "spherede")
+        s = CreateSphereDEShape(object2world, world2object, reverseOrientation,
+                                paramSet);
+    else if (name == "infinitespheregridde")
+        s = CreateInfiniteSphereGridDEShape(object2world, world2object,
+                                            reverseOrientation, paramSet);
+    else if (name == "mandelbulbde")
+        s = CreateMandelbulbDEShape(object2world, world2object,
+                                    reverseOrientation, paramSet);
+    else if (name == "torusde")
+        s = CreateTorusDEShape(object2world, world2object, reverseOrientation,
+                               paramSet);
     if (s != nullptr) shapes.push_back(s);
 
     // Create multiple-_Shape_ types

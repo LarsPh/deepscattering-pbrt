@@ -1,4 +1,3 @@
-
 /*
     pbrt source code is Copyright(c) 1998-2016
                         Matt Pharr, Greg Humphreys, and Wenzel Jakob.
@@ -39,12 +38,18 @@
 #define PBRT_CORE_MEDIUM_H
 
 // core/medium.h*
-#include "pbrt.h"
-#include "geometry.h"
-#include "spectrum.h"
 #include <memory>
+#include <unordered_map>
+
+#include "geometry.h"
+#include "pbrt.h"
+#include "spectrum.h"
+
+// WZR:
+#include "ext/interpolation.h"
 
 namespace pbrt {
+typedef std::unordered_map<int, Float> unoMap;
 
 // Media Declarations
 class PhaseFunction {
@@ -65,10 +70,21 @@ inline std::ostream &operator<<(std::ostream &os, const PhaseFunction &p) {
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
                                    Spectrum *sigma_s);
 
+// WZR: Maths Inline Functions
+inline Float ToDegrees(Float rad) { return rad / 180.0 * Pi; }
+
+inline Float ToRad(Float degrees) { return degrees * 180.0 / Pi; }
+
 // Media Inline Functions
 inline Float PhaseHG(Float cosTheta, Float g) {
     Float denom = 1 + g * g + 2 * g * cosTheta;
     return Inv4Pi * (1 - g * g) / (denom * std::sqrt(denom));
+}
+
+inline Float BetterAcos(Float cos) {
+    if (cos <= -1.0) return Pi;
+    if (cos >= 1.0) return 0;
+    return acos(cos);
 }
 
 // Medium Declarations
@@ -98,6 +114,51 @@ class HenyeyGreenstein : public PhaseFunction {
     const Float g;
 };
 
+// WZR: CloudMie Declarations
+
+// Comparing in precision 2
+
+/*
+struct RoundedHash {
+    std::size_t operator()(const Float &f) const {
+        return std::hash<float>()(round(f * 100) / 100);
+    }
+};
+
+struct RoundedEqual {
+    bool operator()(const Float &lhs, const Float &rhs) const {
+        return round(lhs * 100) / 100 == round(rhs * 100) / 100;
+    }
+};
+*/
+
+class CloudMie : public PhaseFunction {
+  public:
+    // CloudMie Public Methods
+    Float p(const Vector3f &wo, const Vector3f &wi) const;
+    Float Sample_p(const Vector3f &wo, Vector3f *wi,
+                   const Point2f &sample) const;
+    std::string ToString() const {
+        return StringPrintf("[ Mie parameters: TODO ]");
+    }
+    //static void createCerp();
+    static void initializeCDF();
+    static unoMap inversedCDF4;
+    static unoMap inversedCDF8;
+    static unoMap inversedCDF9;
+    static unoMap inversedCDFe;
+
+  private:
+    
+    //static alglib::spline1dinterpolant CerpPhase;
+    //static alglib::spline1dinterpolant CerpInv;
+    //static alglib::real_1d_array Theta;
+
+    Float phaseMie(Float degree) const;
+    Float evaluate(Float u0, Float precision, unoMap &inversedCDF, Float r1,
+                   Float r2) const;
+};
+
 // MediumInterface Declarations
 struct MediumInterface {
     MediumInterface() : inside(nullptr), outside(nullptr) {}
@@ -108,7 +169,6 @@ struct MediumInterface {
     bool IsMediumTransition() const { return inside != outside; }
     const Medium *inside, *outside;
 };
-
 }  // namespace pbrt
 
 #endif  // PBRT_CORE_MEDIUM_H

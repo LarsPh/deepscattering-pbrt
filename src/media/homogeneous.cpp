@@ -56,10 +56,13 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     Float dist = -std::log(1 - sampler.Get1D()) / sigma_t[channel];
     Float t = std::min(dist / ray.d.Length(), ray.tMax);
     bool sampledMedium = t < ray.tMax;
-    if (sampledMedium)
+    if (sampledMedium) {
+        //WZR:
         *mi = MediumInteraction(ray(t), -ray.d, ray.time, this,
-                                ARENA_ALLOC(arena, HenyeyGreenstein)(g));
-
+                                // WZR:
+                                // ARENA_ALLOC(arena, HenyeyGreenstein)(g));                                
+                                ARENA_ALLOC(arena, CloudMie));
+    }
     // Compute the transmittance and sampling density
     Spectrum Tr = Exp(-sigma_t * std::min(t, MaxFloat) * ray.d.Length());
 
