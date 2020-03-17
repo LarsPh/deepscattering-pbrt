@@ -230,8 +230,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // Render image tiles in parallel
 
     //WZR: temp
-    //CloudMie::createCerp();
-    CloudMie::initializeCDF();
+    CloudMie::createCerp();
+    //CloudMie::initializeCDF();
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();

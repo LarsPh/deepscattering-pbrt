@@ -141,22 +141,24 @@ class CloudMie : public PhaseFunction {
     std::string ToString() const {
         return StringPrintf("[ Mie parameters: TODO ]");
     }
-    //static void createCerp();
-    static void initializeCDF();
-    static unoMap inversedCDF4;
-    static unoMap inversedCDF8;
-    static unoMap inversedCDF9;
-    static unoMap inversedCDFe;
+    static void createCerp();
+    //static void initializeCDF();
+    //static unoMap inversedCDF4;
+    //static unoMap inversedCDF8;
+    //static unoMap inversedCDF9;
+    //static unoMap inversedCDFe;
 
   private:
     
-    //static alglib::spline1dinterpolant CerpPhase;
-    //static alglib::spline1dinterpolant CerpInv;
-    //static alglib::real_1d_array Theta;
+    static alglib::spline1dinterpolant CerpPhase;
+    static alglib::spline1dinterpolant CerpInv;
+    static alglib::real_1d_array MiePhase;
+    static alglib::real_1d_array CDF;
+    static alglib::real_1d_array Theta;
 
     Float phaseMie(Float degree) const;
-    Float evaluate(Float u0, Float precision, unoMap &inversedCDF, Float r1,
-                   Float r2) const;
+    /*Float evaluate(Float u0, Float precision, unoMap &inversedCDF, Float r1,
+                   Float r2) const;*/
 };
 
 // MediumInterface Declarations
