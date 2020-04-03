@@ -251,7 +251,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
     // Write to database
     // DsLMDB db;
-    DsLMDB::Count();
+    // DsLMDB::Count();
     // db.TxnWrite(valData, sizeof(Float) * 225);
 
     return L;
