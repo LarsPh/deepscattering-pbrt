@@ -43,6 +43,9 @@
 #include "camera.h"
 #include "stats.h"
 
+// WZR
+#include "deepscattering/dslmdb.h"
+
 namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
@@ -132,8 +135,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         } else {
             // Evaluate phase function for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
-            Float p = mi.phase->p(mi.wo, wi);
-            f = Spectrum(p);
+            Float p = mi.phase->p(mi.wo, wi, f);
+            //f = Spectrum(p);
             scatteringPdf = p;
             VLOG(2) << "  medium p: " << p;
         }
@@ -229,9 +232,11 @@ void SamplerIntegrator::Render(const Scene &scene) {
     Preprocess(scene, *sampler);
     // Render image tiles in parallel
 
-    //WZR: temp
+    // WZR: Initialze static class members
+    // CloudMie::initializeCDF();
     CloudMie::createCerp();
-    //CloudMie::initializeCDF();
+    DsLMDB::OpenEnv();    
+    // ends
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();

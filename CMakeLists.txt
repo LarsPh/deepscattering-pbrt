@@ -1,3 +1,5 @@
+# WZR: modified by Zhaorong Wang. Add deepscattering filter.
+
 # TODO: many of the best practices described here
 # (https://www.slideshare.net/DanielPfeifer1/cmake-48475415) are violated
 # in this file. Would be nice to address some of these.
@@ -461,6 +463,7 @@ FILE ( GLOB PBRT_SOURCE
   src/shapes/*
   src/textures/*
   src/media/*
+  src/deepscattering/*
   )
 
 INCLUDE_DIRECTORIES ( src )
@@ -479,6 +482,7 @@ SOURCE_GROUP (samplers REGULAR_EXPRESSION src/samplers/.*)
 SOURCE_GROUP (shapes REGULAR_EXPRESSION src/shapes/.*)
 SOURCE_GROUP (textures REGULAR_EXPRESSION src/textures/.*)
 SOURCE_GROUP (media REGULAR_EXPRESSION src/media/.*)
+SOURCE_GROUP (deepscattering REGULAR_EXPRESSION src/deepscattering/.*)
 
 ###########################################################################
 # pbrt libraries and executables

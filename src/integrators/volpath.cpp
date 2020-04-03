@@ -32,6 +32,7 @@
 
 // integrators/volpath.cpp*
 #include "integrators/volpath.h"
+
 #include "bssrdf.h"
 #include "camera.h"
 #include "film.h"
@@ -39,6 +40,10 @@
 #include "paramset.h"
 #include "scene.h"
 #include "stats.h"
+// WZR:
+#include "deepscattering/dslmdb.h"
+#include "deepscattering/recordstencils.h"
+#include "lights/distant.h"
 
 namespace pbrt {
 
@@ -68,6 +73,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     // avoid terminating refracted rays that are about to be refracted back
     // out of a medium and thus have their beta value increased.
     Float etaScale = 1;
+    // WZR:
+    // int fstMediaBounce = 10000;
+    // Spectrum directRadiance = Spectrum(0.f);
+    // Float valData[2254];
 
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
@@ -88,8 +97,57 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Handle scattering at point in medium for volumetric path tracer
             const Distribution1D *lightDistrib =
                 lightDistribution->Lookup(mi.p);
-            L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true,
-                                              lightDistrib);
+            // WZR:
+            // for glory: dimmer on multiple-scattered radiance to make glory
+            // more visually obvious
+            // also multiply phase funtion by a constant number in case weak
+            // backward leap cause
+            // radiance value near zero and treated as black.
+            if (bounces == 0)
+                L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
+                                                  true, lightDistrib);
+            else
+                L += 0.1 * beta * UniformSampleOneLight(mi, scene, arena,
+            sampler, true, lightDistrib);
+            // for glory ends 
+
+            /*// without glory
+            Spectrum dL =
+                beta * UniformSampleOneLight(mi, scene, arena, sampler, true,
+                                             lightDistrib);
+            L += dL;
+            // without glory ends */
+
+            // WZR: record location and cache direct light radiance
+            /*
+            if (bounces < fstMediaBounce) {
+                Point3f p = mi.p;
+                std::shared_ptr<DistantLight> light =
+                    std::dynamic_pointer_cast<DistantLight>(scene.lights[0]);
+                Vector3f wLight = light->GetLightDirection();
+                GridDensityMedium *medium = (GridDensityMedium *)mi.GetMedium();
+
+                // record stencils
+                RecordStencils stencils(medium, p, mi.wo, wLight,
+                                        2e-3f);
+                // how the unit length of stencils 0.002 is computed:
+                // the max scaler for example clouds is 2, all the original
+            clouds sizes are
+                // 2x2x2 (according to the "p0 [-1 -1 -1]" and "p1 [1 1 1]"
+            attributes
+                // of the medium in pbrt files), results in size 4x4x4 for the
+            largest scaled clouds.
+                // here we align it with the z-direction length (4 since the
+            stencil is 2x2x4) of the
+                // K=10 stencil, which gives the unit length(for K=10) of 1.
+            Then we have (1/2^9)*1 =
+                // 0.002 for K=1
+                stencils.record(valData);
+
+                directRadiance = dL;
+                fstMediaBounce = bounces;
+            }
+            */
 
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
@@ -185,6 +243,17 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         }
     }
     ReportValue(pathLength, bounces);
+
+    // WZR: record multiple-scattered radiance
+    // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
+    // Spectrum scatteredRadiance = L - directRadiance;
+    // scatteredRadiance.ToRGB(&valData[2251]);
+
+    // Write to database
+    // DsLMDB db;
+    DsLMDB::Count();
+    // db.TxnWrite(valData, sizeof(Float) * 225);
+
     return L;
 }
 

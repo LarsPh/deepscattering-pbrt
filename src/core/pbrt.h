@@ -416,6 +416,13 @@ int FindInterval(int size, const Predicate &pred) {
 
 inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
+// WZR:
+inline Float BetterAcos(Float cos) {
+    if (cos <= -1.0) return Pi;
+    if (cos >= 1.0) return 0;
+    return acos(cos);
+}
+
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
     // Find quadratic discriminant
     double discrim = (double)b * (double)b - 4 * (double)a * (double)c;

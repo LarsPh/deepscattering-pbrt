@@ -79,3 +79,22 @@ TEST(HenyeyGreenstein, Normalized) {
         EXPECT_NEAR(sum / nSamples, 1. / (4. * Pi), 1e-3f);
     }
 }
+
+TEST(CloudMie, Normalized) {
+    RNG rng;
+    
+    CloudMie::createCerp();
+    CloudMie mie;
+    Vector3f wo =
+        UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
+    Float sum = 0;
+    int nSamples = 100000000;
+    for (int i = 0; i < nSamples; ++i) {
+        Vector3f wi =
+            UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
+        sum += mie.p(wo, wi);
+    }
+    // Phase function should integrate to 1/4pi.
+    EXPECT_NEAR(sum / nSamples, 1. / (4. * Pi), 1e-3f);
+
+}

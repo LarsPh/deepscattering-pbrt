@@ -44,6 +44,7 @@
 #include "accelerators/bvh.h"
 #include "accelerators/kdtreeaccel.h"
 #include "cameras/environment.h"
+#include "cameras/reversedenvironment.h"
 #include "cameras/orthographic.h"
 #include "cameras/perspective.h"
 #include "cameras/realistic.h"
@@ -826,6 +827,9 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
                                        mediumInterface.outside);
     else if (name == "environment")
         camera = CreateEnvironmentCamera(paramSet, animatedCam2World, film,
+                                         mediumInterface.outside);
+    else if (name == "reversedenvironment")
+        camera = CreateReversedEnvironmentCamera(paramSet, animatedCam2World, film,
                                          mediumInterface.outside);
     else
         Warning("Camera \"%s\" unknown.", name.c_str());

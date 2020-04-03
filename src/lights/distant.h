@@ -64,6 +64,9 @@ class DistantLight : public Light {
                        Float *pdfDir) const;
     void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                 Float *pdfDir) const;
+    // WZR:
+    // getter method for recording light direction
+    Vector3f GetLightDirection() const { return wLight; }
 
   private:
     // DistantLight Private Data
