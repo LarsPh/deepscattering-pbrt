@@ -18,7 +18,7 @@ void DsLMDB::OpenEnv() {
             env,
             "D:/Computer "
             "Science/UJiangnanGraduationProject/Contents/Advanced/DL&Graphics/"
-            "DeepScattering/houdini_projects/Cloud/deepscattering_db/db_49.lmdb",
+            "DeepScattering/houdini_projects/Cloud/deepscattering_db/db_49_demo.lmdb",
             MDB_NOSUBDIR, 0)) {
         //mdb_env_close(env);
         Error("fail to open lmdb environment.");
