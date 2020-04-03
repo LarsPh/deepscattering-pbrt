@@ -74,9 +74,9 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     // out of a medium and thus have their beta value increased.
     Float etaScale = 1;
     // WZR:
-    // int fstMediaBounce = 10000;
-    // Spectrum directRadiance = Spectrum(0.f);
-    // Float valData[2254];
+    Spectrum directRadiance = Spectrum(0.f);
+    Float valData[2254];
+    int fstMediaBounce = 10000;
 
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
@@ -98,10 +98,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             const Distribution1D *lightDistrib =
                 lightDistribution->Lookup(mi.p);
             // WZR:
-            // for glory: dimmer on multiple-scattered radiance to make glory
-            // more visually obvious
+            /* // for glory: dimmer on multiple-scattered radiance to make glory
+            more visually obvious
             // also multiply phase funtion by a constant number in case weak
-            // backward leap cause
+            backward leap cause
             // radiance value near zero and treated as black.
             if (bounces == 0)
                 L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
@@ -109,17 +109,16 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             else
                 L += 0.1 * beta * UniformSampleOneLight(mi, scene, arena,
             sampler, true, lightDistrib);
-            // for glory ends 
+            // for glory ends */
 
-            /*// without glory
+            // without glory
             Spectrum dL =
                 beta * UniformSampleOneLight(mi, scene, arena, sampler, true,
                                              lightDistrib);
             L += dL;
-            // without glory ends */
+            // without glory ends
 
             // WZR: record location and cache direct light radiance
-            /*
             if (bounces < fstMediaBounce) {
                 Point3f p = mi.p;
                 std::shared_ptr<DistantLight> light =
@@ -128,26 +127,20 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 GridDensityMedium *medium = (GridDensityMedium *)mi.GetMedium();
 
                 // record stencils
-                RecordStencils stencils(medium, p, mi.wo, wLight,
-                                        2e-3f);
+                RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
                 // how the unit length of stencils 0.002 is computed:
                 // the max scaler for example clouds is 2, all the original
-            clouds sizes are
-                // 2x2x2 (according to the "p0 [-1 -1 -1]" and "p1 [1 1 1]"
-            attributes
-                // of the medium in pbrt files), results in size 4x4x4 for the
-            largest scaled clouds.
-                // here we align it with the z-direction length (4 since the
-            stencil is 2x2x4) of the
-                // K=10 stencil, which gives the unit length(for K=10) of 1.
-            Then we have (1/2^9)*1 =
-                // 0.002 for K=1
+                // clouds sizes are 2x2x2 (according to the "p0 [-1 -1 -1]" and
+                // "p1 [1 1 1]" attributes of the medium in pbrt files), results
+                // in size 4x4x4 for the largest scaled clouds. here we align it
+                // with the z-direction length (4 since the stencil is 2x2x4) of
+                // the K=10 stencil, which gives the unit length(for K=10) of 1.
+                // Then we have (1/2^9)*1 = 0.002 for K=1
                 stencils.record(valData);
 
                 directRadiance = dL;
                 fstMediaBounce = bounces;
             }
-            */
 
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
@@ -246,13 +239,12 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
     // WZR: record multiple-scattered radiance
     // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
-    // Spectrum scatteredRadiance = L - directRadiance;
-    // scatteredRadiance.ToRGB(&valData[2251]);
+    Spectrum scatteredRadiance = L - directRadiance;
+    scatteredRadiance.ToRGB(&valData[2251]);
 
     // Write to database
-    // DsLMDB db;
-    // DsLMDB::Count();
-    // db.TxnWrite(valData, sizeof(Float) * 225);
+    DsLMDB db;
+    db.TxnWrite(valData, sizeof(Float) * 225);
 
     return L;
 }

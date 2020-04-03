@@ -2392,20 +2392,20 @@ Float CloudMie::phaseMie(Float degree, Spectrum &f) const {
     // Float f2 = MiePhase[int(degreeBy10) + 1];
     // return Lerp(t, f1, f2);
     Float values[3];
-    // with glory 
+    /* // with glory 
     values[0] = 3.0 * alglib::spline1dcalc(CerpR, degree);
     values[1] = 3.0 * alglib::spline1dcalc(CerpG, degree);
     values[2] = 3.0 * alglib::spline1dcalc(CerpB, degree);
     f = Spectrum::FromRGB(values);
 
     return alglib::spline1dcalc(CerpPDF, degree);
-    // with glory ends
-    /* // without glory
+    // with glory ends */
+    // without glory
     Float pdf = alglib::spline1dcalc(CerpPDF, degree);
     values[0] = values[1] = values[2] = pdf;
     f = Spectrum::FromRGB(values);
     
     return pdf;
-    // without glory ends */
+    // without glory ends
 }
 }  // namespace pbrt

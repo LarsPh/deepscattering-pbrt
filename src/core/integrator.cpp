@@ -235,7 +235,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // WZR: Initialze static class members
     // CloudMie::initializeCDF();
     CloudMie::createCerp();
-    // DsLMDB::OpenEnv();    
+    DsLMDB::OpenEnv();    
     // ends
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
