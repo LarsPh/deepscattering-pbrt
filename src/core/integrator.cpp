@@ -354,11 +354,13 @@ void SamplerIntegrator::Render(const Scene &scene) {
     }
     LOG(INFO) << "Rendering finished";
 
-    //WZR: tempt
-    // DsLMDB::tmpPrint();
-
     // Save final image after rendering
     camera->film->WriteImage();
+    // WZR:
+    if (camera->film->haveVariance) {
+        camera->film->WriteVarianceImage();
+        camera->film->PrintVariance();
+    }
 }
 
 Spectrum SamplerIntegrator::SpecularReflect(
