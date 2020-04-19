@@ -133,7 +133,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                     Vector3f wLight = light->GetLightDirection(pMediumCenter);
 
                 // record stencils
-                // RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
+                //      RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
                 // how the unit length of stencils 0.002 is computed:
                 // the max scaler for example clouds is 2, all the original
                 // clouds sizes are 2x2x2 (according to the "p0 [-1 -1 -1]" and
