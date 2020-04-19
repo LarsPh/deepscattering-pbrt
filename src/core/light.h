@@ -109,6 +109,11 @@ class AreaLight : public Light {
     AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
               int nSamples);
     virtual Spectrum L(const Interaction &intr, const Vector3f &w) const = 0;
+    // WZR:
+    // getter method for recording light direction
+    Vector3f GetLightDirection(Point3f pCamera) const {
+        return LightToWorld(Point3f(0, 0, 0)) - pCamera;
+    }
 };
 
 }  // namespace pbrt

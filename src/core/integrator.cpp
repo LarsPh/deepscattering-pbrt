@@ -135,8 +135,14 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         } else {
             // Evaluate phase function for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
+            //Mie
             Float p = mi.phase->p(mi.wo, wi, f);
+            f = Spectrum(p);
+            //Mie end
+            //HG
+            //Float p = mi.phase->p(mi.wo, wi);
             //f = Spectrum(p);
+            //HG end
             scatteringPdf = p;
             VLOG(2) << "  medium p: " << p;
         }
@@ -233,9 +239,14 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // Render image tiles in parallel
 
     // WZR: Initialze static class members
-    // CloudMie::initializeCDF();
     CloudMie::createCerp();
-    DsLMDB::OpenEnv();    
+    
+    /*
+    DsLMDB::OpenEnv(
+        "D:/Computer "
+        "Science/UJiangnanGraduationProject/Contents/Advanced/DL&Graphics/"
+        "DeepScattering/houdini_projects/Cloud/deepscattering_db2/db_1196");
+    */
     // ends
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
@@ -342,6 +353,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
         reporter.Done();
     }
     LOG(INFO) << "Rendering finished";
+
+    //WZR: tempt
+    // DsLMDB::tmpPrint();
 
     // Save final image after rendering
     camera->film->WriteImage();

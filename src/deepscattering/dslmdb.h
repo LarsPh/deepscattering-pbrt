@@ -10,23 +10,28 @@
 #define PBRT_DEEPSCATTERING_DSLMDB_H
 
 #include <lmdb.h>
+#include <unordered_set>
 
 #include "pbrt.h"
 
 namespace pbrt {
 class DsLMDB {
   public:
-    static void OpenEnv();
-    static void Count() {
-        ++counter;
-        LOG(INFO) << counter;
-    }
+    static void OpenEnv(const char *path);
     void TxnWrite(void *valData, size_t valSize);
+
+    static void tmpCount() { ++tmpCounter; }
+    static void tmpPrint() { std::cout << tmpCounter; }
 
   private:
     static MDB_env *env;
     static MDB_dbi dbi;
-    static int counter;
+
+    static int tmpCounter;
+    
+    static std::unordered_set<int>::iterator it;
+    static std::unordered_set<int> keys;
+    static void createKeys(int n);
 };
 }  // namespace pbrt
 

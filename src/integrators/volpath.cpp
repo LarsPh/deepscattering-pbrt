@@ -43,7 +43,7 @@
 // WZR:
 #include "deepscattering/dslmdb.h"
 #include "deepscattering/recordstencils.h"
-#include "lights/distant.h"
+#include "light.h"
 
 namespace pbrt {
 
@@ -75,7 +75,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Float etaScale = 1;
     // WZR:
     Spectrum directRadiance = Spectrum(0.f);
-    Float valData[2254];
+    Float valData[2254] = {0};
+    bool hitMedium = false;
     int fstMediaBounce = 10000;
 
     for (bounces = 0;; ++bounces) {
@@ -120,14 +121,19 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             // WZR: record location and cache direct light radiance
             if (bounces < fstMediaBounce) {
+                hitMedium = true;
                 Point3f p = mi.p;
-                std::shared_ptr<DistantLight> light =
-                    std::dynamic_pointer_cast<DistantLight>(scene.lights[0]);
-                Vector3f wLight = light->GetLightDirection();
+                std::shared_ptr<AreaLight> light =
+                    std::dynamic_pointer_cast<AreaLight>(scene.lights[0]);
                 GridDensityMedium *medium = (GridDensityMedium *)mi.GetMedium();
+                Point3f pMediumCenter = medium->World2Medium(Point3f(0, 0, 0));
+                // direction of light = pAreaLight - pCamera, pCamera = pMediumCenter
+                Vector3f wLight = Vector3f(0, 0, 0);
+                if (light != nullptr)
+                    Vector3f wLight = light->GetLightDirection(pMediumCenter);
 
                 // record stencils
-                RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
+                // RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
                 // how the unit length of stencils 0.002 is computed:
                 // the max scaler for example clouds is 2, all the original
                 // clouds sizes are 2x2x2 (according to the "p0 [-1 -1 -1]" and
@@ -136,7 +142,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // with the z-direction length (4 since the stencil is 2x2x4) of
                 // the K=10 stencil, which gives the unit length(for K=10) of 1.
                 // Then we have (1/2^9)*1 = 0.002 for K=1
-                stencils.record(valData);
+                //      stencils.record(valData);
 
                 directRadiance = dL;
                 fstMediaBounce = bounces;
@@ -242,9 +248,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Spectrum scatteredRadiance = L - directRadiance;
     scatteredRadiance.ToRGB(&valData[2251]);
 
+    // if ((valData[2251] == valData[2252] == valData[2253] == 0))
+        // DsLMDB::tmpCount();
+
+    // if (hitMedium == false) std::cout << "not hit";
+
     // Write to database
-    DsLMDB db;
-    db.TxnWrite(valData, sizeof(Float) * 225);
+    // DsLMDB db;
+    // db.TxnWrite(valData, sizeof(Float) * 2254);
 
     return L;
 }

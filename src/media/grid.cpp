@@ -65,6 +65,10 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     ProfilePhase _(Prof::MediumSample);
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
+    // WZR: seems wrong :(
+    // Ray rMedium = WorldToMedium(rWorld);
+    // Ray ray =
+    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax * rMedium.d.Length());
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
     const Bounds3f b(Point3f(0, 0, 0), Point3f(1, 1, 1));
     Float tMin, tMax;
@@ -75,7 +79,9 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     while (true) {
         t -= std::log(1 - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tMax) break;
-        if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
+        Float gridDensity = Density(ray(t));
+        // if (gridDensity > 0) DsLMDB::tmpCount();
+        if (gridDensity * invMaxDensity > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
             //WZR:
             //PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
@@ -94,6 +100,10 @@ Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
 
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
+    // WZR: seems wrong :(
+    // Ray rMedium = WorldToMedium(rWorld);
+    // Ray ray =
+    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax * rMedium.d.Length());
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
     const Bounds3f b(Point3f(0, 0, 0), Point3f(1, 1, 1));
     Float tMin, tMax;

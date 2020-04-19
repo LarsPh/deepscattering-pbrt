@@ -87,6 +87,7 @@ class GridDensityMedium : public Medium {
     Spectrum Tr(const Ray &ray, Sampler &sampler) const;
     // WZR: for calling Density outside Tr
     Point3f World2Medium(Point3f p) { return WorldToMedium(p); }
+    Point3f Medium2World(Point3f p) { return Inverse(WorldToMedium)(p); }
 
   private:
     // GridDensityMedium Private Data
