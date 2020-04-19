@@ -39,12 +39,12 @@
 #define PBRT_CORE_FILM_H
 
 // core/film.h*
-#include "pbrt.h"
-#include "geometry.h"
-#include "spectrum.h"
 #include "filter.h"
-#include "stats.h"
+#include "geometry.h"
 #include "parallel.h"
+#include "pbrt.h"
+#include "spectrum.h"
+#include "stats.h"
 
 namespace pbrt {
 
@@ -52,6 +52,8 @@ namespace pbrt {
 struct FilmTilePixel {
     Spectrum contribSum = 0.f;
     Float filterWeightSum = 0.f;
+    // WZR:
+    Spectrum varianceContribSum = 0.f;
 };
 
 // Film Declarations
@@ -61,7 +63,7 @@ class Film {
     Film(const Point2i &resolution, const Bounds2f &cropWindow,
          std::unique_ptr<Filter> filter, Float diagonal,
          const std::string &filename, Float scale,
-         Float maxSampleLuminance = Infinity);
+         Float maxSampleLuminance = Infinity, bool haveVariance = false);
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
@@ -69,7 +71,12 @@ class Film {
     void SetImage(const Spectrum *img) const;
     void AddSplat(const Point2f &p, Spectrum v);
     void WriteImage(Float splatScale = 1);
+    void WriteVarianceImage(Float splatScale = 1);
     void Clear();
+    // WZR:
+    void PrintVariance() {
+        std::cout << "\ntotal variace: " << variance << "\n";
+    }
 
     // Film Public Data
     const Point2i fullResolution;
@@ -77,22 +84,27 @@ class Film {
     std::unique_ptr<Filter> filter;
     const std::string filename;
     Bounds2i croppedPixelBounds;
+    // WZR:
+    bool haveVariance;
 
   private:
     // Film Private Data
     struct Pixel {
-        Pixel() { xyz[0] = xyz[1] = xyz[2] = filterWeightSum = 0; }
+        Pixel() { xyz[0] = xyz[1] = xyz[2] = filterWeightSum = counter = 0; }
         Float xyz[3];
         Float filterWeightSum;
+        int counter;
         AtomicFloat splatXYZ[3];
         Float pad;
     };
     std::unique_ptr<Pixel[]> pixels;
+    std::unique_ptr<Pixel[]> variancePixels;
     static PBRT_CONSTEXPR int filterTableWidth = 16;
     Float filterTable[filterTableWidth * filterTableWidth];
     std::mutex mutex;
     const Float scale;
     const Float maxSampleLuminance;
+    float variance;
 
     // Film Private Methods
     Pixel &GetPixel(const Point2i &p) {
@@ -102,6 +114,14 @@ class Film {
                      (p.y - croppedPixelBounds.pMin.y) * width;
         return pixels[offset];
     }
+
+    Pixel &GetVariancePixel(const Point2i &p) {
+        CHECK(InsideExclusive(p, croppedPixelBounds));
+        int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
+        int offset = (p.x - croppedPixelBounds.pMin.x) +
+                     (p.y - croppedPixelBounds.pMin.y) * width;
+        return variancePixels[offset];
+    }
 };
 
 class FilmTile {
@@ -109,20 +129,19 @@ class FilmTile {
     // FilmTile Public Methods
     FilmTile(const Bounds2i &pixelBounds, const Vector2f &filterRadius,
              const Float *filterTable, int filterTableSize,
-             Float maxSampleLuminance)
+             Float maxSampleLuminance, bool haveVariance)
         : pixelBounds(pixelBounds),
           filterRadius(filterRadius),
           invFilterRadius(1 / filterRadius.x, 1 / filterRadius.y),
           filterTable(filterTable),
           filterTableSize(filterTableSize),
-          maxSampleLuminance(maxSampleLuminance) {
+          maxSampleLuminance(maxSampleLuminance),
+          haveVariance(haveVariance) {
         pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
     }
-    void AddSample(const Point2f &pFilm, Spectrum L,
-                   Float sampleWeight = 1.) {
+    void AddSample(const Point2f &pFilm, Spectrum L, Float sampleWeight = 1.) {
         ProfilePhase _(Prof::AddFilmSample);
-        if (L.y() > maxSampleLuminance)
-            L *= maxSampleLuminance / L.y();
+        if (L.y() > maxSampleLuminance) L *= maxSampleLuminance / L.y();
         // Compute sample's raster bounds
         Point2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
         Point2i p0 = (Point2i)Ceil(pFilmDiscrete - filterRadius);
@@ -156,6 +175,7 @@ class FilmTile {
                 FilmTilePixel &pixel = GetPixel(Point2i(x, y));
                 pixel.contribSum += L * sampleWeight * filterWeight;
                 pixel.filterWeightSum += filterWeight;
+                pixel.varianceContribSum += L * L * sampleWeight * filterWeight;
             }
         }
     }
@@ -184,6 +204,8 @@ class FilmTile {
     std::vector<FilmTilePixel> pixels;
     const Float maxSampleLuminance;
     friend class Film;
+    // WZR:
+    bool haveVariance;
 };
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter);

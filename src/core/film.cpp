@@ -30,12 +30,14 @@
 
  */
 
-
 // core/film.cpp*
 #include "film.h"
-#include "paramset.h"
+
 #include "imageio.h"
+#include "paramset.h"
 #include "stats.h"
+// WZR:
+#include <regex>
 
 namespace pbrt {
 
@@ -44,27 +46,34 @@ STAT_MEMORY_COUNTER("Memory/Film pixels", filmPixelMemory);
 // Film Method Definitions
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
            std::unique_ptr<Filter> filt, Float diagonal,
-           const std::string &filename, Float scale, Float maxSampleLuminance)
+           const std::string &filename, Float scale, Float maxSampleLuminance,
+           bool haveVariance)
     : fullResolution(resolution),
       diagonal(diagonal * .001),
       filter(std::move(filt)),
       filename(filename),
       scale(scale),
-      maxSampleLuminance(maxSampleLuminance) {
+      maxSampleLuminance(maxSampleLuminance),
+      haveVariance(haveVariance),
+      variance(0) {
     // Compute film image bounds
     croppedPixelBounds =
         Bounds2i(Point2i(std::ceil(fullResolution.x * cropWindow.pMin.x),
                          std::ceil(fullResolution.y * cropWindow.pMin.y)),
                  Point2i(std::ceil(fullResolution.x * cropWindow.pMax.x),
                          std::ceil(fullResolution.y * cropWindow.pMax.y)));
-    LOG(INFO) << "Created film with full resolution " << resolution <<
-        ". Crop window of " << cropWindow << " -> croppedPixelBounds " <<
-        croppedPixelBounds;
+    LOG(INFO) << "Created film with full resolution " << resolution
+              << ". Crop window of " << cropWindow << " -> croppedPixelBounds "
+              << croppedPixelBounds;
 
     // Allocate film image storage
     pixels = std::unique_ptr<Pixel[]>(new Pixel[croppedPixelBounds.Area()]);
     filmPixelMemory += croppedPixelBounds.Area() * sizeof(Pixel);
-
+    if (haveVariance) {
+        variancePixels =
+            std::unique_ptr<Pixel[]>(new Pixel[croppedPixelBounds.Area()]);
+        filmPixelMemory += croppedPixelBounds.Area() * sizeof(Pixel);
+    }
     // Precompute filter weight table
     int offset = 0;
     for (int y = 0; y < filterTableWidth; ++y) {
@@ -100,16 +109,15 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
     Point2i p1 = (Point2i)Floor(floatBounds.pMax - halfPixel + filter->radius) +
                  Point2i(1, 1);
     Bounds2i tilePixelBounds = Intersect(Bounds2i(p0, p1), croppedPixelBounds);
-    return std::unique_ptr<FilmTile>(new FilmTile(
-        tilePixelBounds, filter->radius, filterTable, filterTableWidth,
-        maxSampleLuminance));
+    return std::unique_ptr<FilmTile>(
+        new FilmTile(tilePixelBounds, filter->radius, filterTable,
+                     filterTableWidth, maxSampleLuminance, haveVariance));
 }
 
 void Film::Clear() {
     for (Point2i p : croppedPixelBounds) {
         Pixel &pixel = GetPixel(p);
-        for (int c = 0; c < 3; ++c)
-            pixel.splatXYZ[c] = pixel.xyz[c] = 0;
+        for (int c = 0; c < 3; ++c) pixel.splatXYZ[c] = pixel.xyz[c] = 0;
         pixel.filterWeightSum = 0;
     }
 }
@@ -126,6 +134,15 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
         tilePixel.contribSum.ToXYZ(xyz);
         for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
         mergePixel.filterWeightSum += tilePixel.filterWeightSum;
+        // WZR:
+        if (haveVariance) {
+            Pixel &mergeVariancePixel = GetVariancePixel(pixel);
+            Float varianceXyz[3];
+            tilePixel.varianceContribSum.ToXYZ(varianceXyz);
+            for (int i = 0; i < 3; ++i)
+                mergeVariancePixel.xyz[i] += varianceXyz[i];
+            mergeVariancePixel.filterWeightSum += tilePixel.filterWeightSum;
+        }
     }
 }
 
@@ -143,23 +160,28 @@ void Film::AddSplat(const Point2f &p, Spectrum v) {
     ProfilePhase pp(Prof::SplatFilm);
 
     if (v.HasNaNs()) {
-        LOG(ERROR) << StringPrintf("Ignoring splatted spectrum with NaN values "
-                                   "at (%f, %f)", p.x, p.y);
+        LOG(ERROR) << StringPrintf(
+            "Ignoring splatted spectrum with NaN values "
+            "at (%f, %f)",
+            p.x, p.y);
         return;
     } else if (v.y() < 0.) {
-        LOG(ERROR) << StringPrintf("Ignoring splatted spectrum with negative "
-                                   "luminance %f at (%f, %f)", v.y(), p.x, p.y);
+        LOG(ERROR) << StringPrintf(
+            "Ignoring splatted spectrum with negative "
+            "luminance %f at (%f, %f)",
+            v.y(), p.x, p.y);
         return;
     } else if (std::isinf(v.y())) {
-        LOG(ERROR) << StringPrintf("Ignoring splatted spectrum with infinite "
-                                   "luminance at (%f, %f)", p.x, p.y);
+        LOG(ERROR) << StringPrintf(
+            "Ignoring splatted spectrum with infinite "
+            "luminance at (%f, %f)",
+            p.x, p.y);
         return;
     }
 
     Point2i pi = Point2i(Floor(p));
     if (!InsideExclusive(pi, croppedPixelBounds)) return;
-    if (v.y() > maxSampleLuminance)
-        v *= maxSampleLuminance / v.y();
+    if (v.y() > maxSampleLuminance) v *= maxSampleLuminance / v.y();
     Float xyz[3];
     v.ToXYZ(xyz);
     Pixel &pixel = GetPixel(pi);
@@ -168,8 +190,8 @@ void Film::AddSplat(const Point2f &p, Spectrum v) {
 
 void Film::WriteImage(Float splatScale) {
     // Convert image to RGB and compute final pixel values
-    LOG(INFO) <<
-        "Converting image to RGB and computing final weighted pixel values";
+    LOG(INFO)
+        << "Converting image to RGB and computing final weighted pixel values";
     std::unique_ptr<Float[]> rgb(new Float[3 * croppedPixelBounds.Area()]);
     int offset = 0;
     for (Point2i p : croppedPixelBounds) {
@@ -205,11 +227,74 @@ void Film::WriteImage(Float splatScale) {
     }
 
     // Write RGB image
-    LOG(INFO) << "Writing image " << filename << " with bounds " <<
-        croppedPixelBounds;
+    LOG(INFO) << "Writing image " << filename << " with bounds "
+              << croppedPixelBounds;
     pbrt::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
 }
 
+// WZR:
+void Film::WriteVarianceImage(Float splatScale) {
+    // Convert image to RGB and compute final pixel values
+    LOG(INFO) << "Converting image to RGB and computing final weighted pixel "
+                 "values for variance image";
+    std::unique_ptr<Float[]> rgb(new Float[3 * croppedPixelBounds.Area()]);
+    std::unique_ptr<Float[]> varianceRgb(
+        new Float[3 * croppedPixelBounds.Area()]);
+    int offset = 0;
+    for (Point2i p : croppedPixelBounds) {
+        // Convert pixel XYZ color to RGB
+        Pixel &pixel = GetPixel(p);
+        Pixel &variancePixel = GetVariancePixel(p);
+        XYZToRGB(pixel.xyz, &rgb[3 * offset]);
+        XYZToRGB(variancePixel.xyz, &varianceRgb[3 * offset]);
+
+        // Normalize pixel with weight sum
+        Float filterWeightSum = variancePixel.filterWeightSum;
+        if (filterWeightSum != 0) {
+            Float invWt = (Float)1 / filterWeightSum;
+
+            varianceRgb[3 * offset] =
+                std::max((Float)0, varianceRgb[3 * offset] * invWt -
+                                       std::pow(rgb[3 * offset] * invWt, 2));
+            varianceRgb[3 * offset + 1] = std::max(
+                (Float)0, varianceRgb[3 * offset + 1] * invWt -
+                              std::pow(rgb[3 * offset + 1] * invWt, 2));
+            varianceRgb[3 * offset + 2] = std::max(
+                (Float)0, varianceRgb[3 * offset + 2] * invWt -
+                              std::pow(rgb[3 * offset + 2] * invWt, 2));
+        }
+
+        variance += varianceRgb[3 * offset] + varianceRgb[3 * offset + 1] +
+                    varianceRgb[3 * offset + 2];
+
+        // Add splat value at pixel
+        Float splatRGB[3];
+        Float splatXYZ[3] = {variancePixel.splatXYZ[0],
+                             variancePixel.splatXYZ[1],
+                             variancePixel.splatXYZ[2]};
+        XYZToRGB(splatXYZ, splatRGB);
+        varianceRgb[3 * offset] += splatScale * splatRGB[0];
+        varianceRgb[3 * offset + 1] += splatScale * splatRGB[1];
+        varianceRgb[3 * offset + 2] += splatScale * splatRGB[2];
+
+        // Scale pixel value by _scale_
+        varianceRgb[3 * offset] *= scale;
+        varianceRgb[3 * offset + 1] *= scale;
+        varianceRgb[3 * offset + 2] *= scale;
+
+        ++offset;
+    }
+    // Add suffix "_variance" to filename
+    std::string varianceFilename = filename.substr(0, filename.find(".")) +
+                                   "_variance" +
+                                   filename.substr(filename.find("."));
+
+    // Write RGB image
+    LOG(INFO) << "Writing image " << varianceFilename << " with bounds "
+              << croppedPixelBounds;
+    pbrt::WriteImage(varianceFilename, &varianceRgb[0], croppedPixelBounds,
+                     fullResolution);
+}
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     std::string filename;
     if (PbrtOptions.imageFile != "") {
@@ -217,7 +302,8 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
         std::string paramsFilename = params.FindOneString("filename", "");
         if (paramsFilename != "")
             Warning(
-                "Output filename supplied on command line, \"%s\" is overriding "
+                "Output filename supplied on command line, \"%s\" is "
+                "overriding "
                 "filename provided in scene description file, \"%s\".",
                 PbrtOptions.imageFile.c_str(), paramsFilename.c_str());
     } else
@@ -245,10 +331,11 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
 
     Float scale = params.FindOneFloat("scale", 1.);
     Float diagonal = params.FindOneFloat("diagonal", 35.);
-    Float maxSampleLuminance = params.FindOneFloat("maxsampleluminance",
-                                                   Infinity);
+    Float maxSampleLuminance =
+        params.FindOneFloat("maxsampleluminance", Infinity);
+    bool haveVariance = params.FindOneBool("haveVariance", false);
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
-                    filename, scale, maxSampleLuminance);
+                    filename, scale, maxSampleLuminance, haveVariance);
 }
 
 }  // namespace pbrt
