@@ -5,6 +5,7 @@
 build/
 scenes/
 documentation/
+exporters/
 .sconsign.dblite
 *.opendb
 .vs/
