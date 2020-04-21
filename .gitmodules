@@ -13,3 +13,6 @@
 [submodule "src/ext/lmdb"]
 	path = src/ext/lmdb
 	url = https://github.com/LarsPh/lmdb
+[submodule "src/ext/lmdbcmake"]
+	path = src/ext/lmdbcmake
+	url = https://github.com/LarsPh/lmdb
