@@ -252,16 +252,18 @@ void Film::WriteVarianceImage(Float splatScale) {
         Float filterWeightSum = variancePixel.filterWeightSum;
         if (filterWeightSum != 0) {
             Float invWt = (Float)1 / filterWeightSum;
-
-            varianceRgb[3 * offset] =
-                std::max((Float)0, varianceRgb[3 * offset] * invWt -
-                                       std::pow(rgb[3 * offset] * invWt, 2));
-            varianceRgb[3 * offset + 1] = std::max(
-                (Float)0, varianceRgb[3 * offset + 1] * invWt -
-                              std::pow(rgb[3 * offset + 1] * invWt, 2));
-            varianceRgb[3 * offset + 2] = std::max(
-                (Float)0, varianceRgb[3 * offset + 2] * invWt -
-                              std::pow(rgb[3 * offset + 2] * invWt, 2));
+            Float invWtSq = invWt * invWt;
+            varianceRgb[3 * offset] = std::max(
+                (Float)0, varianceRgb[3 * offset] * invWt -
+                              rgb[3 * offset] * rgb[3 * offset] * invWtSq);
+            varianceRgb[3 * offset + 1] =
+                std::max((Float)0, varianceRgb[3 * offset + 1] * invWt -
+                                       rgb[3 * offset + 1] *
+                                           rgb[3 * offset + 1] * invWtSq);
+            varianceRgb[3 * offset + 2] =
+                std::max((Float)0, varianceRgb[3 * offset + 2] * invWt -
+                                       rgb[3 * offset + 2] *
+                                           rgb[3 * offset + 2] * invWtSq);
         }
 
         variance += varianceRgb[3 * offset] + varianceRgb[3 * offset + 1] +
