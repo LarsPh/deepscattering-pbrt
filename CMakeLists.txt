@@ -6,6 +6,9 @@
 
 CMAKE_MINIMUM_REQUIRED ( VERSION 2.8.4 )
 
+# WZR: allow to build targets with identical names
+set(ALLOW_DUPLICATE_CUSTOM_TARGETS TRUE)
+
 # For sanitizers
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -74,9 +77,6 @@ IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 ENDIF()
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# WZR: allow to build targets with identical names
-SET(ALLOW_DUPLICATE_CUSTOM_TARGETS TRUE)
 
 ###########################################################################
 # Annoying compiler-specific details
