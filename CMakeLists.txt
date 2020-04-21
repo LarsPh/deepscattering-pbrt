@@ -75,6 +75,9 @@ ENDIF()
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# WZR: allow to build targets with identical names
+SET(ALLOW_DUPLICATE_CUSTOM_TARGETS TRUE)
+
 ###########################################################################
 # Annoying compiler-specific details
 
