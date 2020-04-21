@@ -133,7 +133,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                     Vector3f wLight = light->GetLightDirection(pMediumCenter);
 
                 // record stencils
-                // RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
+                RecordStencils stencils(medium, p, mi.wo, wLight, 2e-3f);
                 // how the unit length of stencils 0.002 is computed:
                 // the max scaler for example clouds is 2, all the original
                 // clouds sizes are 2x2x2 (according to the "p0 [-1 -1 -1]" and
@@ -142,7 +142,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // with the z-direction length (4 since the stencil is 2x2x4) of
                 // the K=10 stencil, which gives the unit length(for K=10) of 1.
                 // Then we have (1/2^9)*1 = 0.002 for K=1
-                //      stencils.record(valData);
+                stencils.record(valData);
 
                 directRadiance = dL;
                 fstMediaBounce = bounces;
@@ -254,8 +254,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     // if (hitMedium == false) std::cout << "not hit";
 
     // Write to database
-    // DsLMDB db;
-    // db.TxnWrite(valData, sizeof(Float) * 2254);
+    DsLMDB db;
+    db.TxnWrite(valData, sizeof(Float) * 2254);
 
     return L;
 }

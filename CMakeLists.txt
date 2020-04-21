@@ -1,4 +1,4 @@
-# WZR: modified by Zhaorong Wang. Add deepscattering filter.
+# WZR: modified by Zhaorong Wang. Add lmdb library and deepscattering filter in vs ide.
 
 # TODO: many of the best practices described here
 # (https://www.slideshare.net/DanielPfeifer1/cmake-48475415) are violated
@@ -54,6 +54,13 @@ endif()
 
 if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib/doc")
   message(FATAL_ERROR "The zlib submodule directory is missing! "
+    "You probably did not clone the project with --recursive, or you first checked out "
+    "pbrt before it was added. It is possible to recover by running "
+    "\"git submodule update --init --recursive\"")
+endif()
+# WZR:
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/lmdb/")
+  message(FATAL_ERROR "The lmdb submodule directory is missing! "
     "You probably did not clone the project with --recursive, or you first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
@@ -366,6 +373,13 @@ SET_PROPERTY(TARGET Ptex_static ptxinfo halftest ftest rtest wtest PROPERTY FOLD
 INCLUDE_DIRECTORIES ( src/ext/ptex/src/ptex )
 
 ###########################################################################
+# WZR: lmdb
+
+ADD_SUBDIRECTORY(src/ext/lmdb/libraries/liblmdb)
+SET_PROPERTY(TARGET lmdb PROPERTY FOLDER "ext")
+INCLUDE_DIRECTORIES ( src/ext/lmdb/libraries/liblmdb )
+
+###########################################################################
 # On to pbrt...
 
 SET ( PBRT_CORE_SOURCE
@@ -520,6 +534,7 @@ SET(ALL_PBRT_LIBS
   glog
   Ptex_static
   ${ZLIB_LIBRARY}
+  lmdb
 )
 
 # Main renderer
