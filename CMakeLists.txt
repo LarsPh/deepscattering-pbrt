@@ -59,7 +59,7 @@ if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib/doc")
     "\"git submodule update --init --recursive\"")
 endif()
 # WZR:
-if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/lmdb/")
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/lmdbcmake/")
   message(FATAL_ERROR "The lmdb submodule directory is missing! "
     "You probably did not clone the project with --recursive, or you first checked out "
     "pbrt before it was added. It is possible to recover by running "
@@ -375,9 +375,9 @@ INCLUDE_DIRECTORIES ( src/ext/ptex/src/ptex )
 ###########################################################################
 # WZR: lmdb
 
-ADD_SUBDIRECTORY(src/ext/lmdb/libraries/liblmdb)
+ADD_SUBDIRECTORY(src/ext/lmdbcmake/libraries/liblmdb)
 SET_PROPERTY(TARGET lmdb PROPERTY FOLDER "ext")
-INCLUDE_DIRECTORIES ( src/ext/lmdb/libraries/liblmdb )
+INCLUDE_DIRECTORIES ( src/ext/lmdbcmake/libraries/liblmdb )
 
 ###########################################################################
 # On to pbrt...
