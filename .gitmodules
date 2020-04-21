@@ -12,4 +12,4 @@
 	url = https://github.com/wdas/ptex.git
 [submodule "src/ext/lmdb"]
 	path = src/ext/lmdb
-	url = https://github.com/LMDB/lmdb
+	url = https://github.com/LarsPh/lmdb
