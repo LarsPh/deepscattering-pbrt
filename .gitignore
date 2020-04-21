@@ -1,6 +1,11 @@
 *~
-src/build
-src/bin
-src/objs
+/src/build
+/src/bin
+/src/objs
+build/
+scenes/
+documentation/
+exporters/
 .sconsign.dblite
 *.opendb
+.vs/
