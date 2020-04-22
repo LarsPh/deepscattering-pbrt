@@ -9,7 +9,7 @@
 namespace pbrt {
 MDB_env* DsLMDB::env = nullptr;
 MDB_dbi DsLMDB::dbi = 0;
-int DsLMDB::tmpCounter = 0;
+long DsLMDB::tmpCounter = 0;
 std::unordered_set<int> DsLMDB::keys = {};
 std::unordered_set<int>::iterator DsLMDB::it = DsLMDB::keys.begin();
 

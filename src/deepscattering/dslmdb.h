@@ -29,7 +29,7 @@ class DsLMDB {
     static MDB_env *env;
     static MDB_dbi dbi;
 
-    static int tmpCounter;
+    static long tmpCounter;
     
     static std::unordered_set<int>::iterator it;
     static std::unordered_set<int> keys;
