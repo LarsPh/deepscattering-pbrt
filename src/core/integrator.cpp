@@ -242,9 +242,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     CloudMie::createCerp();
     
     DsLMDB::OpenEnv(
-        "D:/Computer "
-        "Science/UJiangnanGraduationProject/Contents/Advanced/DL&Graphics/"
-        "DeepScattering/houdini_projects/Cloud/deepscattering_db/db_1196");
+        "/home/LarsMpace/ds_db/db_1196");
     // ends
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
@@ -359,6 +357,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
         camera->film->WriteVarianceImage();
         camera->film->PrintVariance();
     }
+    DsLMDB::tmpPrint();
 }
 
 Spectrum SamplerIntegrator::SpecularReflect(
