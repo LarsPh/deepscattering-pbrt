@@ -77,7 +77,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Spectrum directRadiance = Spectrum(0.f);
     Float valData[2254] = {0};
     bool hitMedium = false;
-    int fstMediaBounce = 10000;
+    int fstMediaBounce = 100000;
 
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
@@ -126,11 +126,12 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 std::shared_ptr<AreaLight> light =
                     std::dynamic_pointer_cast<AreaLight>(scene.lights[0]);
                 GridDensityMedium *medium = (GridDensityMedium *)mi.GetMedium();
-                Point3f pMediumCenter = medium->World2Medium(Point3f(0, 0, 0));
-                // direction of light = pAreaLight - pCamera, pCamera = pMediumCenter
+                Point3f pMediumCenter = medium->Medium2World(Point3f(0, 0, 0));
+                // direction of light = pAreaLight - pCamera, pCamera =
+                // pMediumCenter
                 Vector3f wLight = Vector3f(0, 0, 0);
                 if (light != nullptr)
-                    Vector3f wLight = light->GetLightDirection(pMediumCenter);
+                    wLight = light->GetLightDirection(pMediumCenter);
 
                 // record stencils
                 RecordStencils stencils(medium, p, mi.wo, wLight, 0.5f);
@@ -244,19 +245,20 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     }
     ReportValue(pathLength, bounces);
 
-    // WZR: record multiple-scattered radiance
-    // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
-    Spectrum scatteredRadiance = L - directRadiance;
-    scatteredRadiance.ToRGB(&valData[2251]);
-
-    if (!(valData[2251] == valData[2252] == valData[2253] == 0))
-        DsLMDB::tmpCount();
-
     // if (hitMedium == false) std::cout << "not hit";
 
-    // Write to database
-    DsLMDB db;
-    db.TxnWrite(valData, sizeof(Float) * 2254);
+    if (hitMedium) {
+        // WZR: record multiple-scattered radiance
+        // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
+        Spectrum scatteredRadiance = L - directRadiance;
+        scatteredRadiance.ToRGB(&valData[2251]);
+
+        if (scatteredRadiance.MaxComponentValue() != 0) DsLMDB::tmpCount();
+
+        // Write to database
+        DsLMDB db;
+        db.TxnWrite(valData, sizeof(Float) * 2254);
+    }
 
     return L;
 }

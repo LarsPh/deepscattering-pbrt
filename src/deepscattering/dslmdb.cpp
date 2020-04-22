@@ -11,7 +11,8 @@ MDB_env* DsLMDB::env = nullptr;
 MDB_dbi DsLMDB::dbi = 0;
 int DsLMDB::tmpCounter = 0;
 std::unordered_set<int> DsLMDB::keys = {};
-std::unordered_set<int>::iterator DsLMDB::it = DsLMDB::keys.begin();
+std::unordered_set<int>::iterator DsLMDB::it =
+    std::unordered_set<int>::iterator();
 
 void DsLMDB::createKeys(int n) {
     if (n >= INT_MAX / 2) Error("too many to efficiently generate");
@@ -25,6 +26,7 @@ void DsLMDB::createKeys(int n) {
         while (keys.size() < counter) keys.insert(distribution(generator));
     }
     CHECK_EQ(keys.size(), n);
+    it = keys.begin();
 }
 
 void DsLMDB::OpenEnv(const char *path) {
