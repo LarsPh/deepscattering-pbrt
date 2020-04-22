@@ -361,6 +361,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
         camera->film->WriteVarianceImage();
         camera->film->PrintVariance();
     }
+    DsLMDB::tmpPrint();
 }
 
 Spectrum SamplerIntegrator::SpecularReflect(

@@ -282,9 +282,9 @@ void Film::WriteVarianceImage(Float splatScale) {
         ++offset;
     }
     // Add suffix "_variance" to filename
-    std::string varianceFilename = filename.substr(0, filename.find(".")) +
+    std::string varianceFilename = filename.substr(0, filename.find(".exr")) +
                                    "_variance" +
-                                   filename.substr(filename.find("."));
+                                   filename.substr(filename.find(".exr"));
     
     // Write RGB image
     LOG(INFO) << "Writing image " << varianceFilename << " with bounds "

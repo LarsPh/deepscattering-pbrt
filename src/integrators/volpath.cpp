@@ -248,8 +248,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Spectrum scatteredRadiance = L - directRadiance;
     scatteredRadiance.ToRGB(&valData[2251]);
 
-    // if ((valData[2251] == valData[2252] == valData[2253] == 0))
-        // DsLMDB::tmpCount();
+    if (!(valData[2251] == valData[2252] == valData[2253] == 0))
+        DsLMDB::tmpCount();
 
     // if (hitMedium == false) std::cout << "not hit";
 
