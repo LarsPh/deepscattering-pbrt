@@ -21,7 +21,9 @@ class DsLMDB {
     void TxnWrite(void *valData, size_t valSize);
 
     static void tmpCount() { ++tmpCounter; }
-    static void tmpPrint() { std::cout << tmpCounter; }
+    static void tmpPrint() {
+        std::cout << "\nnumber of non-zero records:" << tmpCounter << std::endl;
+    }
 
   private:
     static MDB_env *env;
