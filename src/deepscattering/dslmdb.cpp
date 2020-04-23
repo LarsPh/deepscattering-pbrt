@@ -34,21 +34,21 @@ void DsLMDB::OpenEnv(const char *path) {
     // create random numbers
     createKeys(1200 * 2400);
     if (const int rc = mdb_env_create(&env))
-        Error("fail to create lmdb environment.");
+        Error("fail to create lmdb environment.", std::to_string(rc));
     mdb_env_set_maxdbs(env, 50);
     // 1GB * 36 = 36GB
     mdb_env_set_mapsize(env, (size_t)1073741824 * (size_t)36);
     if (const int rc = mdb_env_open(env, path, 0, 0)) {
         // mdb_env_close(env);
-        Error("fail to open lmdb environment.");
+        Error("fail to open lmdb environment.", std::to_string(rc));
     }
     MDB_txn *transaction;
     if (const int rc = mdb_txn_begin(env, nullptr, 0, &transaction)) {
-        Error("fail to open first transaction.");
+        Error("fail to open first transaction.", std::to_string(rc));
     }
 
     if (const int rc = mdb_dbi_open(transaction, nullptr, MDB_CREATE, &dbi)) {
-        Error("fail to open database.");
+        Error("fail to open database.", std::to_string(rc));
     }
     mdb_txn_commit(transaction);
 }
@@ -56,7 +56,7 @@ void DsLMDB::TxnWrite(void *valData,
                       size_t valSize) {
     MDB_txn *transaction;
     if (const int rc = mdb_txn_begin(env, nullptr, 0, &transaction)) {
-        Error("fail to open transaction for a write.");
+        Error("fail to open transaction for a write.", std::to_string(rc));
     }    
     int intKey = *it;
     ++it;
