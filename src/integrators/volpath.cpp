@@ -77,7 +77,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Spectrum directRadiance = Spectrum(0.f);
     // Float valData[2254] = {0};
     bool hitMedium = false;
-    int fstMediaBounce = 10000;
+    int fstMediaBounce = 100000;
 
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
@@ -126,21 +126,23 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 std::shared_ptr<AreaLight> light =
                     std::dynamic_pointer_cast<AreaLight>(scene.lights[0]);
                 GridDensityMedium *medium = (GridDensityMedium *)mi.GetMedium();
-                Point3f pMediumCenter = medium->World2Medium(Point3f(0, 0, 0));
-                // direction of light = pAreaLight - pCamera, pCamera = pMediumCenter
+                Point3f pMediumCenter = medium->Medium2World(Point3f(0, 0, 0));
+                // direction of light = pAreaLight - pCamera, pCamera =
+                // pMediumCenter
                 Vector3f wLight = Vector3f(0, 0, 0);
                 if (light != nullptr)
-                    Vector3f wLight = light->GetLightDirection(pMediumCenter);
+                    wLight = light->GetLightDirection(pMediumCenter);
 
                 // record stencils
                 //      RecordStencils stencils(medium, p, mi.wo, wLight, 0.5f);
                 // how the unit length of stencils 0.5 is computed:
                 // the max scaler for example clouds is 2, all the original
-                // clouds sizes are (2*250)x(2*250)x(2*250) -> 500x500x500 (according to the "p0 [-1 -1 -1]" and
-                // "p1 [1 1 1]" attributes of the medium in pbrt files), results
-                // in size 1000x1000x1000 for the largest scaled clouds. here we align it
-                // with the z-direction length (4 since the stencil is 2x2x4) of
-                // the K=10 stencil, which gives the unit length(for K=10) of 1000/4=250.
+                // clouds sizes are (2*250)x(2*250)x(2*250) -> 500x500x500
+                // (according to the "p0 [-1 -1 -1]" and "p1 [1 1 1]" attributes
+                // of the medium in pbrt files), results in size 1000x1000x1000
+                // for the largest scaled clouds. here we align it with the
+                // z-direction length (4 since the stencil is 2x2x4) of the K=10
+                // stencil, which gives the unit length(for K=10) of 1000/4=250.
                 // Then we have (1/2^9)*250 = 0.5 for K=1
                 //      stencils.record(valData);
 
@@ -170,8 +172,11 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             if (!foundIntersection || bounces >= maxDepth) break;
 
             // Compute scattering functions and skip over medium boundaries
-            isect.ComputeScatteringFunctions(ray, arena, true);
-            if (!isect.bsdf) {
+            isect.ComputeScatteringFunctions(ray, arena, true);            
+            // WZR: prevent reflections on area light, for data generation situation only
+            // since for scenes used for data generation, there is no surface in media. 
+            // if (!isect.bsdf)
+            if (true) {
                 ray = isect.SpawnRay(ray.d);
                 bounces--;
                 continue;
@@ -243,19 +248,24 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     }
     ReportValue(pathLength, bounces);
 
-    // WZR: record multiple-scattered radiance
-    // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
-    Spectrum scatteredRadiance = L - directRadiance;
-    // scatteredRadiance.ToRGB(valData+2251);
-
-    if (scatteredRadiance.MaxComponentValue() != 0)
-        DsLMDB::tmpCount();
-
     // if (hitMedium == false) std::cout << "not hit";
 
-    // Write to database
-    // DsLMDB db;
-    // db.TxnWrite(valData, sizeof(Float) * 2254);
+    if (hitMedium && bounces > 1) {
+        // WZR: record multiple-scattered radiance
+        // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
+        Spectrum scatteredRadiance = L - directRadiance;
+            
+        // scatteredRadiance.ToRGB(&valData[2251]);
+
+        if (scatteredRadiance.MaxComponentValue() != 0)
+            DsLMDB::tmpCount1();
+        else
+            DsLMDB::tmpCount2();
+        // Write to database
+        // DsLMDB db;
+        // db.TxnWrite(valData, sizeof(Float) * 2254);
+        
+    }
 
     return L;
 }

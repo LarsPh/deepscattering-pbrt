@@ -20,16 +20,19 @@ class DsLMDB {
     static void OpenEnv(const char *path);
     void TxnWrite(void *valData, size_t valSize);
 
-    static void tmpCount() { ++tmpCounter; }
+    static void tmpCount1() { ++tmpCounter1; }
+    static void tmpCount2() { ++tmpCounter2; }
     static void tmpPrint() {
-        std::cout << "\nnumber of non-zero records:" << tmpCounter << std::endl;
+        std::cout << "number of non-zero records:" << tmpCounter1 << std::endl;
+        std::cout << "number of zero records:" << tmpCounter2 << std::endl;
     }
 
   private:
     static MDB_env *env;
     static MDB_dbi dbi;
 
-    static long tmpCounter;
+    static long tmpCounter1;
+    static long tmpCounter2;
     
     static std::unordered_set<int>::iterator it;
     static std::unordered_set<int> keys;
