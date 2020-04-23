@@ -410,7 +410,7 @@ if __name__ == '__main__':
     params = {
         "dataPath": "/home/LarsMPace/ds_db/",
         "modelPath": "/home/LarsMPace/sync/models/",
-        "folds": 6,  # 6, folds number for cross validation, each fold contain at least one image
+        "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 1551956,  # samples for file 1196, 18GB
         "recordsNum": 1551956,  # // 20 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 100,
