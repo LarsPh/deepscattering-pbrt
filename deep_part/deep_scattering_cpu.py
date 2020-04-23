@@ -180,6 +180,8 @@ class BulkGenerator():
         self.maxEpoch = maxEpoch
         assert(valiFileSize.is_integer() is True)
         self.valiFileSize = int(valiFileSize)
+        # for testing
+        self.valiFileSize = 0
         self.valiStartFileI = self.valiFileSize * epoch
         self.curFileI = 0
         self.curAccessI = 0
