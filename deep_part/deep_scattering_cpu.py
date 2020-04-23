@@ -313,8 +313,9 @@ class Train():
                     # train minibatch
                     lPred = model(batchData)
                     # clamping predition values less equal to -1
-                    lPred[lPred <= -1] = -0.99999
-                    loss = lossFn(torch.log1p(lPred), torch.log1p(l))
+                    # lPred[lPred <= -1] = -0.99999
+                    # loss = lossFn(torch.log1p(lPred), torch.log1p(l))
+                    loss = lossFn(lPred, l)
                     assert(not torch.isnan(loss).any())
                     optimizer.zero_grad()
                     loss.backward()
