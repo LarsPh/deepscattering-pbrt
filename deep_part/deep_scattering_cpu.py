@@ -190,6 +190,7 @@ class BulkGenerator():
         if (self.curFileI == self.valiStartFileI):
             self.curFileI += self.valiFileSize
         if (self.curFileI >= self.fileNum):
+            print("curFileI:", self.curFileI, "curFileI:", self.curFileI)
             return None
         if (self.curAccessI == 0):
             self.dsLMDB = DsLMDB(self.dirnames[self.curFileI], self.mapSize)
