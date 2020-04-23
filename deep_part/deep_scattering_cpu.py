@@ -277,7 +277,7 @@ class Train():
             model = DSModel()
             model.to(dev)
             optimizer = torch.optim.Adam(
-                model.parameters(), lr=1e-4, amsgrad=True)  # learning rate grows linearly with batchsize
+                model.parameters(), lr=1e-3, amsgrad=True)  # learning rate grows linearly with batchsize
             self.bulkGenerator = BulkGenerator(
                 self.dataPath, epoch, self.maxEpoch, self.fileRecordsNum,
                 self.recordsNum, self.mapSize)
@@ -416,7 +416,7 @@ if __name__ == '__main__':
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 1551956,  # samples for file 1196, 18GB
         "recordsNum": 1551956,  # // 20 + 1,  # data size load in memory, 0.9GB
-        "trainBatchSize": 100,
+        "trainBatchSize": 1000,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
     }
