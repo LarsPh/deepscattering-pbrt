@@ -60,8 +60,8 @@ class Converter():
 
 
 params = {
-    "path": "D:/Computer Science/UJiangnanGraduationProject/Contents/Advanced/DL&Graphics/DeepScattering/houdini_projects/Cloud/deepscattering_db2/db_1196",
-    "mapSize": 1073741824 * 4,  # 1GB * 4
+    "path": "/home/LarsMPace/ds_db/ds_1196",
+    "mapSize": 1073741824 * 20,  # 1GB * 20
 }
 converter = Converter(**params)
 converter.convert(0, 2000)
