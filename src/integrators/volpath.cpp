@@ -173,7 +173,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             // Compute scattering functions and skip over medium boundaries
             isect.ComputeScatteringFunctions(ray, arena, true);
-            if (!isect.bsdf) {
+            // WZR: prevent reflections on area light, for data generation
+            // situation only since for scenes used for data generation, there
+            // is no surface in media. if (!isect.bsdf)
+            if (true) {
                 ray = isect.SpawnRay(ray.d);
                 bounces--;
                 continue;
@@ -247,14 +250,17 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
     // if (hitMedium == false) std::cout << "not hit";
 
-    if (hitMedium) {
+    if (hitMedium && bounces > 1) {
         // WZR: record multiple-scattered radiance
         // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
         Spectrum scatteredRadiance = L - directRadiance;
+
         scatteredRadiance.ToRGB(&valData[2251]);
 
-        if (scatteredRadiance.MaxComponentValue() != 0) DsLMDB::tmpCount();
-
+        if (scatteredRadiance.MaxComponentValue() != 0)
+            DsLMDB::tmpCount1();
+        else
+            DsLMDB::tmpCount2();
         // Write to database
         DsLMDB db;
         db.TxnWrite(valData, sizeof(Float) * 2254);
