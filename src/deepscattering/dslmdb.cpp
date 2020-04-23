@@ -38,7 +38,7 @@ void DsLMDB::OpenEnv(const char *path) {
     mdb_env_set_maxdbs(env, 50);
     // 1GB * 36 = 36GB
     mdb_env_set_mapsize(env, (size_t)1073741824 * (size_t)36);
-    if (const int rc = mdb_env_open(env, path, 0, 0)) {
+    if (const int rc = mdb_env_open(env, path, 0, 740)) {
         // mdb_env_close(env);
         std::string strRc =
             std::string("fail to open lmdb environment." + std::to_string(rc));
