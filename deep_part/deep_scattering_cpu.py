@@ -348,7 +348,7 @@ class Train():
             # report time for a training epoch
             datasetNum = datasetCount
             print("time for training epoch ", epoch,
-                  ": ", time.time() - epochStart / 60, "min")
+                  ": ", (time.time() - epochStart) / 60, "min")
 
             # for testing: do not validate
             return 0
@@ -380,7 +380,7 @@ class Train():
 
                     # report time for validating a dataset
                     print("time for validation epoch", epoch, ", dataset:",
-                          valiCount, ":", (time.time - datasetStart) / 60, "min")
+                          valiCount, ":", (time.time() - datasetStart) / 60, "min")
 
                     # report time for loading a validation dataset
                     loadingStart = time.time()
@@ -397,7 +397,7 @@ class Train():
 
             # report time for a validation epoch
             print("time for validating epoch ", epoch,
-                  ": ", time.time() - epochStart / 60, "min")
+                  ": ", (time.time() - epochStart) / 60, "min")
 
 
 # set device
@@ -408,7 +408,7 @@ dev = torch.device(
 if __name__ == '__main__':
     # parameters for traning
     params = {
-        "dataPath": "/home/LarsMPace/ds_data/",
+        "dataPath": "/home/LarsMPace/ds_db/",
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 6,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 1551956,  # samples for file 1196, 18GB
