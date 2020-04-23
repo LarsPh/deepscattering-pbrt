@@ -40,15 +40,21 @@ void DsLMDB::OpenEnv(const char *path) {
     mdb_env_set_mapsize(env, (size_t)1073741824 * (size_t)36);
     if (const int rc = mdb_env_open(env, path, 0, 0)) {
         // mdb_env_close(env);
-        Error("fail to open lmdb environment.", std::to_string(rc));
+        std::string strRc =
+            std::string("fail to open lmdb environment." + std::to_string(rc));
+        Error(strRc.c_str());
     }
     MDB_txn *transaction;
     if (const int rc = mdb_txn_begin(env, nullptr, 0, &transaction)) {
-        Error("fail to open first transaction.", std::to_string(rc));
+        std::string strRc =
+            std::string("fail to open first transaction." + std::to_string(rc));
+        Error(strRc.c_str());
     }
 
     if (const int rc = mdb_dbi_open(transaction, nullptr, MDB_CREATE, &dbi)) {
-        Error("fail to open database.", std::to_string(rc));
+        std::string strRc =
+            std::string("fail to open database." + std::to_string(rc));
+        Error(strRc.c_str());
     }
     mdb_txn_commit(transaction);
 }
@@ -56,7 +62,9 @@ void DsLMDB::TxnWrite(void *valData,
                       size_t valSize) {
     MDB_txn *transaction;
     if (const int rc = mdb_txn_begin(env, nullptr, 0, &transaction)) {
-        Error("fail to open transaction for a write.", std::to_string(rc));
+        std::string strRc = std::string(
+            "fail to open transaction for a write." + std::to_string(rc));
+        Error(strRc.c_str());
     }    
     int intKey = *it;
     ++it;
