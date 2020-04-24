@@ -64,7 +64,7 @@ class DSModel(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(nodeNum, nodeNum),
             torch.nn.ReLU(),
-            torch.nn.Linear(nodeNum, 3),
+            torch.nn.Linear(nodeNum, 1),
             torch.nn.LeakyReLU())  # ???
 
     def allTo(self, dev):
@@ -127,10 +127,10 @@ class DsDataset(Dataset):
 
     def __getitem__(self, index):
         val = self.pairs[index]
-        assert(len(val) == 2254 * 4)
+        assert(len(val) == 2252 * 4)
         # 'f' stands for 32 bit float
         X = np.frombuffer(val, dtype='f', count=2251)
-        y = np.frombuffer(val, dtype='f', count=3,
+        y = np.frombuffer(val, dtype='f', count=1,
                           offset=2251*4)
         X, gamma = np.split(X, [2250])
         X = np.reshape(X, (225, 10))
