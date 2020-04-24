@@ -257,7 +257,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         Float rgb[3];
         scatteredRadiance.ToRGB(rgb);
-        CHECK_EQ(rgb[0], rgb[1], rgb[2]);
+        CHECK_EQ(rgb[0], rgb[1]);
+        CHECK_EQ(rgb[1], rgb[2]);
         valData[2251] = rgb[0];
 
         if (scatteredRadiance.MaxComponentValue() != 0)
