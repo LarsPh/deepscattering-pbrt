@@ -65,7 +65,7 @@ class DSModel(torch.nn.Module):
             torch.nn.Linear(nodeNum, nodeNum),
             torch.nn.ReLU(),
             torch.nn.Linear(nodeNum, 1),
-            torch.nn.LeakyReLU())  # ???
+            torch.nn.ReLU())  # ???
 
     def allTo(self, dev):
         self.to(dev)
@@ -277,7 +277,7 @@ class Train():
             model = DSModel()
             model.to(dev)
             optimizer = torch.optim.Adam(
-                model.parameters(), lr=1e-3, amsgrad=True)  # learning rate grows linearly with batchsize
+                model.parameters(), lr=5e-4, amsgrad=True)  # learning rate grows linearly with batchsize
             self.bulkGenerator = BulkGenerator(
                 self.dataPath, epoch, self.maxEpoch, self.fileRecordsNum,
                 self.recordsNum, self.mapSize)
@@ -298,6 +298,12 @@ class Train():
                 # for cpu
                 datasetStart = time.time()
                 batchNum = len(dataGenarator)
+
+                for data in dataGenarator:
+                    # hack to make add graph work, seems there's a bug of cannot
+                    # omit the 'data' parameter for add_graph...
+                    self.writer.add_graph(model, data)
+                    break
 
                 for i, (batchData, l) in enumerate(dataGenarator):
                     # load minibatch into device and report loading time
@@ -421,7 +427,7 @@ if __name__ == '__main__':
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 1551956,  # samples for file 1196, 18GB
         "recordsNum": 1551956,  # // 20 + 1,  # data size load in memory, 0.9GB
-        "trainBatchSize": 1000,
+        "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
     }
