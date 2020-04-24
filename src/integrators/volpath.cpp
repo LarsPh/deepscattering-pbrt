@@ -75,7 +75,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Float etaScale = 1;
     // WZR:
     Spectrum directRadiance = Spectrum(0.f);
-    Float valData[2254] = {0};
+    Float valData[2252] = {0};
     bool hitMedium = false;
     int fstMediaBounce = 100000;
 
@@ -255,7 +255,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
         Spectrum scatteredRadiance = L - directRadiance;
 
-        scatteredRadiance.ToRGB(&valData[2251]);
+        Float rgb[3];
+        scatteredRadiance.ToRGB(rgb);
+        CHECK_EQ(rgb[0], rgb[1], rgb[2]);
+        valData[2251] = rgb[0];
 
         if (scatteredRadiance.MaxComponentValue() != 0)
             DsLMDB::tmpCount1();
@@ -263,7 +266,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             DsLMDB::tmpCount2();
         // Write to database
         DsLMDB db;
-        db.TxnWrite(valData, sizeof(Float) * 2254);
+        db.TxnWrite(valData, sizeof(Float) * 2252);
     }
 
     return L;

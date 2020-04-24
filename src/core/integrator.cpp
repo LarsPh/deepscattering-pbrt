@@ -241,10 +241,11 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // WZR: Initialze static class members
     CloudMie::createCerp();
     
-    DsLMDB::OpenEnv("/home/LarsMPace/ds_db/db_1196");
-        //"D:/Computer "
-        //"Science/UJiangnanGraduationProject/Contents/Advanced/DL&"
-        //"Graphics/DeepScattering/houdini_projects/Cloud/deepscattering_db/db_1196");
+    DsLMDB::OpenEnv(
+        //"/home/LarsMPace/ds_db/db_1196");
+        "D:/Computer "
+        "Science/UJiangnanGraduationProject/Contents/Advanced/DL&"
+        "Graphics/DeepScattering/houdini_projects/Cloud/deepscattering_db/db_1196");
     // ends
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
