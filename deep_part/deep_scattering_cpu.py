@@ -28,7 +28,7 @@ class Block(torch.nn.Module):
             print("z contains nan")
         if (torch.isinf(z).any()):
             print("z contains inf")
-        if not (torch.is_nonzero(z)):
+        if (z.sum().data[0] == 0):
             print("z is zero")
         l1 = self.v(z).add_(self.w1(lOut))
         if (torch.isnan(l1).any()):
