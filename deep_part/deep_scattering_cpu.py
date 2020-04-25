@@ -344,10 +344,10 @@ class Train():
                     #       datasetCount, ":", batchStart.elapsed_time(batchEnd) / 1000, "seconds")
                     pos = epoch * datasetNum * batchNum + datasetCount * batchNum + i
 
-                    self.writer.add_scalar('lPred', torch.mean(lPred), pos)
+                    self.writer.add_scalar('lPred', lPred[0], pos)
                     self.writer.add_scalar('l', torch.mean(l), pos)
                     self.writer.add_scalar(
-                        'logLPred', torch.mean(logLPred), pos)
+                        'logLPred', logLPred[0], pos)
                     self.writer.add_scalar('logL', torch.mean(logL), pos)
                     self.writer.add_scalar('training loss', loss, pos)
 
