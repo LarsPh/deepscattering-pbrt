@@ -38,13 +38,6 @@ class Converter():
                 strGamma = ["%.4g" % gamma for gamma in pVal[1]]
                 file.write('\t'.join(strGamma)+'\n')
                 # write l \n\n\n\n
-                if not (pVal[2][0] == pVal[2][1] == pVal[2][2]):
-                    self.diff += 1
-                    print('r:', pVal[2][0], 'g:', pVal[2][1], 'b:', pVal[2][2])
-                else:
-                    self.same += 1
-                    if (pVal[2][0] != 0):
-                        print("same but not zero")
                 strL = ["%.4g" % l for l in pVal[2]]
                 file.write('\t'.join(strL)+'\n\n\n\n')
         print(self.same, "same rgb's")
