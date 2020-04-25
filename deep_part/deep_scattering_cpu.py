@@ -156,8 +156,7 @@ class DsDataset(Dataset):
         assert(np.isfinite(X).all())
 
     def __getitem__(self, index):
-        val = self.pairs[index]
-        return val
+        return self.pairs[index]
 
     def reportMissingData(self):
         if (self.nanCount != 0 | self.nanCount != 0):
