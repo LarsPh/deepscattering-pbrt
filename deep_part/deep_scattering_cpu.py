@@ -272,8 +272,8 @@ class Train():
         model.to(dev)
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-2)  # learning rate grows linearly with batchsize
-        for epoch in range(self.maxEpoch):            
+            model.parameters(), lr=1e-1)  # learning rate grows linearly with batchsize
+        for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
                 break
