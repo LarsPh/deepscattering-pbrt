@@ -302,7 +302,7 @@ class Train():
                 for data in dataGenarator:
                     # hack to make add graph work, seems there's a bug of cannot
                     # omit the 'data' parameter for add_graph...
-                    self.writer.add_graph(model, data)
+                    self.writer.add_graph(model, list(data))
                     break
 
                 for i, (batchData, l) in enumerate(dataGenarator):
