@@ -268,7 +268,6 @@ class Train():
             raise("Unkoun kind of data.")
 
     def train(self):
-        lossFn = torch.nn.MSELoss()
         for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
@@ -284,8 +283,10 @@ class Train():
             epochStart = time.time()
             model = DSModel()
             model.to(dev)
+            lossFn = torch.nn.MSELoss()
             optimizer = torch.optim.Adam(
-                model.parameters(), lr=1e-3)  # learning rate grows linearly with batchsize
+                model.parameters(), lr=5e-4)  # learning rate grows linearly with batchsize
+
             self.bulkGenerator = BulkGenerator(
                 self.dataPath, epoch, self.maxEpoch, self.fileRecordsNum,
                 self.recordsNum, self.mapSize)
