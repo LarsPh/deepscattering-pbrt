@@ -90,6 +90,7 @@ class DsLMDB():
         pairs = {}  # type: {int: bytes}
         corruptedCount = 0
         for key in range(start, stop):
+            print("in DsLMDB.load()")
             bKey = key.to_bytes(4, byteorder='little')
             val = txn.get(bKey)
             if val is not None:
@@ -306,6 +307,9 @@ class Train():
                     # loadingStart = time.time()
                     batchData, l = batchData.to(
                         dev), l.to(dev)
+                    # for testing
+                    if (i == 0):
+                        print(np.unique(batchData.data.numpy(), return_counts=True))
                     # print("time for loading a minibatch in epoch", epoch,
                     #       "dataset", datasetCount, ":", time.time()-loadingStart)
 

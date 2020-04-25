@@ -47,7 +47,7 @@ void RecordStencils::record(Float* data) {
                 << "incorrect stencil positions";
         }    
         // Float gamma = BetterAcos(Dot(wLight, wView));
-        Float gamma = Dot(wLight, wView);
+        Float gamma = Dot(Normalize(wLight), Normalize(wView));
         data[2250] = gamma;
     }
 
