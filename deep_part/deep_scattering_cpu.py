@@ -143,7 +143,7 @@ class DsDataset(Dataset):
             assert(not np.isnan(X).any())
             self.pairs[key] = (X, y)
             self.pairs[key][0].setflags(write=1)
-            self.pairs[key][1].setflags(write=1)
+            # self.pairs[key][1].setflags(write=1)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
