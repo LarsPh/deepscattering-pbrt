@@ -54,7 +54,7 @@ class Converter():
         stencil = np.frombuffer(val, dtype='f', count=2250)
         gamma = np.frombuffer(val, dtype='f', count=1,
                               offset=2250*4)
-        l = np.frombuffer(val, dtype='f', count=3,
+        l = np.frombuffer(val, dtype='f', count=1,
                           offset=2251*4)
         return (stencil, gamma, l)
 
