@@ -111,9 +111,37 @@ class DsDataset(Dataset):
         self.pairs = pairs
         self.infCount = 0
         self.nanCount = 0
+        self.format()
 
     def __len__(self):
         return len(self.pairs)
+
+    def format(self):
+        for key, val in self.pairs:
+            assert(len(val) == 2252 * 4)
+            # 'f' stands for 32 bit float
+            X = np.frombuffer(val, dtype='f', count=2251)
+            y = np.frombuffer(val, dtype='f', count=1,
+                              offset=2251*4)
+            X, gamma = np.split(X, [2250])
+            X = np.reshape(X, (225, 10))
+            X = np.append(X, np.full((1, 10), gamma), 0)
+            assert(np.shape(X) == (226, 10))
+
+            isinf = np.isinf(X)
+            isneginf = np.isneginf(X)
+            if isinf.any() | isneginf.any():
+                self.infCount += len(isinf[isinf is True]) + \
+                    len(isinf[isneginf is True])
+            X = np.clip(X, np.float32(-10000.0), np.float32(10000.0))
+
+            if np.isnan(X).any():
+                self.cleanNan(X)
+                self.nanCount += 1
+
+            assert(np.isfinite(X).all())
+            assert(not np.isnan(X).any())
+            self.pairs[key] = (X, y)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
@@ -129,30 +157,7 @@ class DsDataset(Dataset):
 
     def __getitem__(self, index):
         val = self.pairs[index]
-        assert(len(val) == 2252 * 4)
-        # 'f' stands for 32 bit float
-        X = np.frombuffer(val, dtype='f', count=2251)
-        y = np.frombuffer(val, dtype='f', count=1,
-                          offset=2251*4)
-        X, gamma = np.split(X, [2250])
-        X = np.reshape(X, (225, 10))
-        X = np.append(X, np.full((1, 10), gamma), 0)
-        assert(np.shape(X) == (226, 10))
-
-        isinf = np.isinf(X)
-        isneginf = np.isneginf(X)
-        if isinf.any() | isneginf.any():
-            self.infCount += len(isinf[isinf is True]) + \
-                len(isinf[isneginf is True])
-        X = np.clip(X, np.float32(-10000.0), np.float32(10000.0))
-
-        if np.isnan(X).any():
-            self.cleanNan(X)
-            self.nanCount += 1
-
-        assert(np.isfinite(X).all())
-        assert(not np.isnan(X).any())
-        return X, y
+        return val
 
     def reportMissingData(self):
         if (self.nanCount != 0 | self.nanCount != 0):
@@ -336,7 +341,8 @@ class Train():
 
                     self.writer.add_scalar('lPred', torch.mean(lPred), pos)
                     self.writer.add_scalar('l', torch.mean(l), pos)
-                    self.writer.add_scalar('logLPred', torch.mean(logLPred), pos)
+                    self.writer.add_scalar(
+                        'logLPred', torch.mean(logLPred), pos)
                     self.writer.add_scalar('logL', torch.mean(logL), pos)
                     self.writer.add_scalar('training loss', loss, pos)
 
