@@ -142,7 +142,7 @@ class DsDataset(Dataset):
             assert(np.isfinite(X).all())
             assert(not np.isnan(X).any())
             self.pairs[key] = (X, y)
-            self.pairs[key][0].setflags(write=1)
+            # self.pairs[key][0].setflags(write=1)
             # self.pairs[key][1].setflags(write=1)
 
     def cleanNan(self, X):
@@ -268,12 +268,13 @@ class Train():
             raise("Unkoun kind of data.")
 
     def train(self):
-        model = DSModel()
-        model.to(dev)
-        lossFn = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(
-                model.parameters(), lr=1e-3)  # learning rate grows linearly with batchsize
         for epoch in range(self.maxEpoch):
+            model = DSModel()
+            model.to(dev)
+            lossFn = torch.nn.MSELoss()
+            optimizer = torch.optim.Adam(
+                model.parameters(), lr=1e-3)  # learning rate grows linearly with batchsize
+
             # for testing
             if (epoch == 1):
                 break
@@ -324,10 +325,14 @@ class Train():
                     optimizer.zero_grad()
                     lPred = model(batchData)
                     # for testing
-                    if (i == 1):
-                        for i in range(25):
-                            print(lPred[i])
-                        # print(np.unique(batchData.data.numpy(), return_counts=True))
+
+                    uni, uniCount = np.unique(
+                        lPred.data.numpy(), return_counts=True)
+                    print("max:", torch.max(lPred), "min:", torch.min(lPred),
+                          "mean:", torch.mean(lPred), "unique count:", uniCount)
+                    if (i == 800):
+                        print("unique values:", uni.tolist())
+
                     # clamping predition values less equal to -1
                     lPred[lPred <= -1] = -0.99999
                     logLPred = torch.log1p(lPred)
@@ -342,13 +347,15 @@ class Train():
                     # torch.cuda.synchronize()
                     # print("time for training a minibatch in epoch", epoch, ", dataset",
                     #       datasetCount, ":", batchStart.elapsed_time(batchEnd) / 1000, "seconds")
+                    nonlogLoss = lossFn(lPred, l)
                     pos = epoch * datasetNum * batchNum + datasetCount * batchNum + i
 
-                    self.writer.add_scalar('lPred', lPred[0], pos)
+                    self.writer.add_scalar('lPred', torch.mean(lPred), pos)
                     self.writer.add_scalar('l', torch.mean(l), pos)
                     self.writer.add_scalar(
-                        'logLPred', logLPred[0], pos)
+                        'logLPred', torch.mean(logLPred), pos)
                     self.writer.add_scalar('logL', torch.mean(logL), pos)
+                    self.writer.add_scalar('non-log loss', nonlogLoss, pos)
                     self.writer.add_scalar('training loss', loss, pos)
 
                 # report time for training a dataset
