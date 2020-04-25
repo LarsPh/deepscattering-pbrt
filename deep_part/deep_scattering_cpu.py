@@ -268,6 +268,11 @@ class Train():
             raise("Unkoun kind of data.")
 
     def train(self):
+        model = DSModel()
+        model.to(dev)
+        lossFn = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(
+                model.parameters(), lr=5e-3)  # learning rate grows linearly with batchsize
         for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
@@ -281,11 +286,6 @@ class Train():
             # epochStart.record()
             # for cpu
             epochStart = time.time()
-            model = DSModel()
-            model.to(dev)
-            lossFn = torch.nn.MSELoss()
-            optimizer = torch.optim.Adam(
-                model.parameters(), lr=5e-4)  # learning rate grows linearly with batchsize
 
             self.bulkGenerator = BulkGenerator(
                 self.dataPath, epoch, self.maxEpoch, self.fileRecordsNum,
@@ -321,6 +321,7 @@ class Train():
                     # batchEnd = torch.cuda.Event(enable_timing=True)
                     # batchStart.record()
                     # train minibatch
+                    optimizer.zero_grad()
                     lPred = model(batchData)
                     # for testing
                     if (i == 1):
@@ -334,7 +335,6 @@ class Train():
                     # loss = lossFn(torch.log1p(lPred), torch.log1p(l))
                     loss = lossFn(logLPred, logL)
                     assert(not torch.isnan(loss).any())
-                    optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
                     # report time for training minibatch
