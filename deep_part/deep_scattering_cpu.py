@@ -28,6 +28,8 @@ class Block(torch.nn.Module):
             print("z contains nan")
         if (torch.isinf(z).any()):
             print("z contains inf")
+        if not (torch.is_nonzero(z)):
+            print("z is zero")
         l1 = self.v(z).add_(self.w1(lOut))
         if (torch.isnan(l1).any()):
             print("l1 contains nan")
@@ -48,7 +50,7 @@ class DSModel(torch.nn.Module):
 
     def forward(self, z):
         batchSize = z.size()[0]
-        out = torch.zeros((batchSize, nodeNum)).to(dev, non_blocking=True)
+        out = torch.zeros((batchSize, nodeNum)).to(dev)
         for i, block in enumerate(self.blocks):
             out = block(out, z.narrow(2, i, 1).squeeze(2))
             # if (torch.isnan(out).any()):
@@ -299,12 +301,6 @@ class Train():
                 datasetStart = time.time()
                 batchNum = len(dataGenarator)
 
-                for data in dataGenarator:
-                    # hack to make add graph work, seems there's a bug of cannot
-                    # omit the 'data' parameter for add_graph...
-                    self.writer.add_graph(model, data[0])
-                    break
-
                 for i, (batchData, l) in enumerate(dataGenarator):
                     # load minibatch into device and report loading time
                     # loadingStart = time.time()
@@ -346,13 +342,19 @@ class Train():
                 print("time for training epoch", epoch, ", dataset",
                       datasetCount, ":", (time.time() - datasetStart) / 60, "min")
 
-                # report time for loading a training dataset
-                print("start to load epoch", epoch, "dataset", datasetCount)
-                loadingStart = time.time()
+                for data in dataGenarator:
+                    # hack to make add graph work, seems there's a bug of cannot
+                    # omit the 'data' parameter for add_graph...
+                    self.writer.add_graph(model, data[0])
+                    break
 
                 # for testing
                 if (datasetCount == 0):
                     break
+
+                # report time for loading a training dataset
+                print("start to load epoch", epoch, "dataset", datasetCount)
+                loadingStart = time.time()
 
                 dataGenarator = self.nextDataGenarator("train")
                 print("time for loading epoch", epoch, "dataset",
