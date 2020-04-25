@@ -117,7 +117,7 @@ class DsDataset(Dataset):
         return len(self.pairs)
 
     def format(self):
-        for key, val in self.pairs:
+        for key, val in self.pairs.items():
             assert(len(val) == 2252 * 4)
             # 'f' stands for 32 bit float
             X = np.frombuffer(val, dtype='f', count=2251)
