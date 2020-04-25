@@ -328,7 +328,7 @@ class Train():
 
                     uni, uniCount = np.unique(
                         lPred.data.numpy(), return_counts=True)
-                    print("shape:", torch.Size(lPred), "max:", torch.max(lPred), "min:", torch.min(lPred),
+                    print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
                           "mean:", torch.mean(lPred), "unique count:", uniCount)
                     if (i == 800):
                         print("unique values:", uni.tolist())
