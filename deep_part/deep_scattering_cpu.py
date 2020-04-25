@@ -285,7 +285,7 @@ class Train():
             model = DSModel()
             model.to(dev)
             optimizer = torch.optim.Adam(
-                model.parameters(), lr=1e-3, amsgrad=True)  # learning rate grows linearly with batchsize
+                model.parameters(), lr=1e-3)  # learning rate grows linearly with batchsize
             self.bulkGenerator = BulkGenerator(
                 self.dataPath, epoch, self.maxEpoch, self.fileRecordsNum,
                 self.recordsNum, self.mapSize)
