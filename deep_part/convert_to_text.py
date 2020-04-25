@@ -60,7 +60,7 @@ class Converter():
 
 
 params = {
-    "path": "/home/LarsMPace/ds_db/ds_1196",
+    "path": "/home/LarsMPace/ds_db/db_001",
     "mapSize": 1073741824 * 20,  # 1GB * 20
 }
 converter = Converter(**params)
