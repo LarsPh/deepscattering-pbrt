@@ -302,7 +302,7 @@ class Train():
                 for data in dataGenarator:
                     # hack to make add graph work, seems there's a bug of cannot
                     # omit the 'data' parameter for add_graph...
-                    self.writer.add_graph(model, list(data))
+                    self.writer.add_graph(model, data[0])
                     break
 
                 for i, (batchData, l) in enumerate(dataGenarator):
@@ -335,10 +335,10 @@ class Train():
                     #       datasetCount, ":", batchStart.elapsed_time(batchEnd) / 1000, "seconds")
                     pos = epoch * datasetNum * batchNum + datasetCount * batchNum + i
 
-                    self.writer.add_scalar('lPred', lPred, pos)
-                    self.writer.add_scalar('l', l, pos)
-                    self.writer.add_scalar('logLPred', logLPred, pos)
-                    self.writer.add_scalar('logL', logL, pos)
+                    self.writer.add_scalar('lPred', torch.mean(lPred), pos)
+                    self.writer.add_scalar('l', torch.mean(l), pos)
+                    self.writer.add_scalar('logLPred', torch.mean(logLPred), pos)
+                    self.writer.add_scalar('logL', torch.mean(logL), pos)
                     self.writer.add_scalar('training loss', loss, pos)
 
                 # report time for training a dataset
