@@ -117,7 +117,7 @@ class DsDataset(Dataset):
         return len(self.pairs)
 
     def format(self):
-        for key, val in self.pairs.items():
+        for key, val in self.pairs.iteritems():
             assert(len(val) == 2252 * 4)
             # 'f' stands for 32 bit float
             X = np.frombuffer(val, dtype='f', count=2251)
@@ -142,6 +142,8 @@ class DsDataset(Dataset):
             assert(np.isfinite(X).all())
             assert(not np.isnan(X).any())
             self.pairs[key] = (X, y)
+            self.pairs[key][0].setflags(write=1)
+            self.pairs[key][1].setflags(write=1)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
@@ -156,10 +158,7 @@ class DsDataset(Dataset):
         assert(np.isfinite(X).all())
 
     def __getitem__(self, index):
-        val = self.pairs[index]
-        val[0].setflags(write=1)
-        val[1].setflags(write=1)
-        return val
+        return self.pairs[index]
 
     def reportMissingData(self):
         if (self.nanCount != 0 | self.nanCount != 0):
