@@ -90,7 +90,6 @@ class DsLMDB():
         pairs = {}  # type: {int: bytes}
         corruptedCount = 0
         for key in range(start, stop):
-            print("in DsLMDB.load()")
             bKey = key.to_bytes(4, byteorder='little')
             val = txn.get(bKey)
             if val is not None:
