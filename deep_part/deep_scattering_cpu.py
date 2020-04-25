@@ -312,11 +312,7 @@ class Train():
                     # loadingStart = time.time()
                     batchData, l = batchData.to(
                         dev), l.to(dev)
-                    # for testing
-                    if (i == 0):
-                        for i in range(25):
-                            print(batchData[0][i][0])
-                        print(np.unique(batchData.data.numpy(), return_counts=True))
+
                     # print("time for loading a minibatch in epoch", epoch,
                     #       "dataset", datasetCount, ":", time.time()-loadingStart)
 
@@ -325,6 +321,11 @@ class Train():
                     # batchStart.record()
                     # train minibatch
                     lPred = model(batchData)
+                    # for testing
+                    if (i == 1):
+                        for i in range(25):
+                            print(lPred[i])
+                        # print(np.unique(batchData.data.numpy(), return_counts=True))
                     # clamping predition values less equal to -1
                     lPred[lPred <= -1] = -0.99999
                     logLPred = torch.log1p(lPred)
