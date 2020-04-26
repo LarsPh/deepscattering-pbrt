@@ -277,7 +277,6 @@ class Train():
 
     def train(self):
         model = DSModel()
-        model.to(dev)
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
             model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
@@ -308,7 +307,7 @@ class Train():
                 loadingStart = time.time()
                 dataGenarator = self.nextDataGenarator(kind="train")
                 print("time for loading epoch", epoch, "dataset",
-                      datasetCount, ":", time.time()-loadingStart)
+                      datasetCount, ":", (time.time()-loadingStart)/60, "min")
 
                 if (dataGenarator is None):
                     break
@@ -321,14 +320,6 @@ class Train():
                 batchNum = len(dataGenarator)
 
                 for i, (batchData, l) in enumerate(dataGenarator):
-                    # load minibatch into device and report loading time
-                    # loadingStart = time.time()
-                    batchData, l = batchData.to(
-                        dev), l.to(dev)
-
-                    # print("time for loading a minibatch in epoch", epoch,
-                    #       "dataset", datasetCount, ":", time.time()-loadingStart)
-
                     # batchStart = torch.cuda.Event(enable_timing=True)
                     # batchEnd = torch.cuda.Event(enable_timing=True)
                     # batchStart.record()
@@ -336,12 +327,11 @@ class Train():
                     optimizer.zero_grad()
                     lPred = model(batchData)
                     # for testing
-
-                    uni, uniCount = np.unique(
-                        lPred.data.numpy(), return_counts=True)
-                    # print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
-                    #      "mean:", torch.mean(lPred), "unique count:", uniCount)
-                    if (i == 800):
+                    if (50 < i < 60):
+                        uni, uniCount = np.unique(
+                            lPred.data.numpy(), return_counts=True)
+                        print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
+                             "mean:", torch.mean(lPred), "unique count:", uniCount)
                         print("unique values:", uni.tolist())
 
                     # clamping predition values less equal to -1
@@ -382,7 +372,7 @@ class Train():
                         break
 
                 # for testing
-                if (datasetCount == 19):
+                if (datasetCount == 4):
                     break
 
                 datasetCount += 1
@@ -455,7 +445,7 @@ if __name__ == '__main__':
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
-        "recordsNum": 2400 * 1200 // 20 + 1,  # data size load in memory, 0.9GB
+        "recordsNum": 2400 * 1200 // 5 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
