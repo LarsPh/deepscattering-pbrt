@@ -261,13 +261,13 @@ class Train():
         if (kind == "train"):
             trainBulk = self.bulkGenerator.nextTrainBulk()
             if (trainBulk is not None):
-                return DataLoader(trainBulk, batch_size=self.trainBatchSize, shuffle=True, pin_memory=True, num_workers=16)
+                return DataLoader(trainBulk, batch_size=self.trainBatchSize, shuffle=True, pin_memory=True, num_workers=0)
             else:
                 return None
         elif (kind == "validation"):
             valiBulk = self.bulkGenerator.nextValiBulk()
             if (valiBulk is not None):
-                return DataLoader(valiBulk, batch_size=self.valiBatchSize, pin_memory=True, num_workers=16)
+                return DataLoader(valiBulk, batch_size=self.valiBatchSize, pin_memory=True, num_workers=0)
             else:
                 return None
         else:
