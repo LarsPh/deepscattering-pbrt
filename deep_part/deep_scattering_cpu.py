@@ -299,14 +299,18 @@ class Train():
 
             datasetNum = 0
             datasetCount = 0
-            # report time for loading a training dataset
-            print("start to load epoch", epoch, "dataset", datasetCount)
-            loadingStart = time.time()
-            dataGenarator = self.nextDataGenarator(kind="train")
-            print("time for loading epoch", epoch, "dataset",
-                  datasetCount, ":", time.time()-loadingStart)
 
-            while (dataGenarator is not None):
+            while (True):
+                # report time for loading a training dataset
+                print("start to load epoch", epoch, "dataset", datasetCount)
+                loadingStart = time.time()
+                dataGenarator = self.nextDataGenarator(kind="train")
+                print("time for loading epoch", epoch, "dataset",
+                      datasetCount, ":", time.time()-loadingStart)
+
+                if (dataGenarator is None):
+                    break
+
                 print("start to train epoch", epoch, "dataset", datasetCount)
                 # for gpu
                 # datasetStart.record()
@@ -368,23 +372,17 @@ class Train():
                 print("time for training epoch", epoch, ", dataset",
                       datasetCount, ":", (time.time() - datasetStart) / 60, "min")
 
-                for data in dataGenarator:
-                    # hack to make add graph work, seems there's a bug of cannot
-                    # omit the 'data' parameter for add_graph...
-                    self.writer.add_graph(model, data[0])
-                    break
+                if (datasetCount == 0):
+                    for data in dataGenarator:
+                        # hack to make add graph work, seems there's a bug of cannot
+                        # omit the 'data' parameter for add_graph...
+                        self.writer.add_graph(model, data[0])
+                        break
 
                 # for testing
                 if (datasetCount == 1):
                     break
 
-                # report time for loading a training dataset
-                print("start to load epoch", epoch, "dataset", datasetCount)
-                loadingStart = time.time()
-
-                dataGenarator = self.nextDataGenarator("train")
-                print("time for loading epoch", epoch, "dataset",
-                      datasetCount, ":", time.time()-loadingStart)
                 datasetCount += 1
 
             # report time for a training epoch
