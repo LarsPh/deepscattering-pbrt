@@ -379,7 +379,7 @@ class Train():
                     break
 
                 # for testing
-                if (datasetCount == 0):
+                if (datasetCount == 1):
                     break
 
                 # report time for loading a training dataset
