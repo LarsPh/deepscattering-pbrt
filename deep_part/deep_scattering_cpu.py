@@ -188,7 +188,7 @@ class BulkGenerator():
         else:
             self.accessTimes = fileRecordsNum // recordsNum + 1
         self.mapSize = mapSize
-        assert(self.accessTimes == 2)
+        assert(self.accessTimes == 3)
         self.dsLMDB = None
         valiFileSize = self.fileNum / maxEpoch
         self.maxEpoch = maxEpoch
@@ -209,6 +209,8 @@ class BulkGenerator():
             print("curFileI:", self.curFileI, "curFileI:", self.curFileI)
             return None
         if (self.curAccessI == 0):
+            # free mem?
+            self.dsLMDB = None
             self.dsLMDB = DsLMDB(self.dirnames[self.curFileI], self.mapSize)
         start = self.curAccessI * self.recordsNum
         stop = min(start + self.recordsNum, self.fileRecordsNum)
@@ -380,7 +382,7 @@ class Train():
                         break
 
                 # for testing
-                if (datasetCount == 1):
+                if (datasetCount == 2):
                     break
 
                 datasetCount += 1
@@ -453,7 +455,7 @@ if __name__ == '__main__':
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
-        "recordsNum": 2400 * 1200 // 2 + 1,  # data size load in memory, 0.9GB
+        "recordsNum": 2400 * 1200 // 3 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
