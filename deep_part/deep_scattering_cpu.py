@@ -117,6 +117,7 @@ class DsDataset(Dataset):
         return len(self.pairs)
 
     def format(self):
+        max = 0
         for key, val in self.pairs.items():
             assert(len(val) == 2252 * 4)
             # 'f' stands for 32 bit float
@@ -141,9 +142,17 @@ class DsDataset(Dataset):
 
             assert(np.isfinite(X).all())
             assert(not np.isnan(X).any())
+
+            valMax = np.amax(X)
+            if valMax > max:
+                max = valMax
             self.pairs[key] = (X, y)
-            # self.pairs[key][0].setflags(write=1)
-            # self.pairs[key][1].setflags(write=1)
+
+        # normalize to [0, 1] except for gamma
+        for key, (X, y) in self.pairs.items():
+            X[:225, :] /= max
+            assert(np.shape(X) == (226, 10))
+            self.pairs[key] = (X, y)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
@@ -272,7 +281,7 @@ class Train():
         model.to(dev)
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
+            model.parameters(), lr=1e-4)  # learning rate grows linearly with batchsize
         for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
@@ -448,8 +457,8 @@ if __name__ == '__main__':
         "dataPath": "/home/LarsMPace/ds_db/",
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
-        "fileRecordsNum": 1589429,  # samples for file 1196, 18GB
-        "recordsNum": 1589429,  # // 20 + 1,  # data size load in memory, 0.9GB
+        "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
+        "recordsNum": 2400 * 1200,  # // 20 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
