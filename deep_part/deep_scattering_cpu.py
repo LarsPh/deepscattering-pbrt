@@ -6,6 +6,9 @@ import lmdb
 import os
 import numpy as np
 import time
+import sys
+
+sys.stdout.flush()
 
 # load data
 
