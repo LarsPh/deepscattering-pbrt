@@ -188,7 +188,7 @@ class BulkGenerator():
         else:
             self.accessTimes = fileRecordsNum // recordsNum + 1
         self.mapSize = mapSize
-        assert(self.accessTimes == 3)
+        assert(self.accessTimes == 20)
         self.dsLMDB = None
         valiFileSize = self.fileNum / maxEpoch
         self.maxEpoch = maxEpoch
@@ -263,13 +263,13 @@ class Train():
         if (kind == "train"):
             trainBulk = self.bulkGenerator.nextTrainBulk()
             if (trainBulk is not None):
-                return DataLoader(trainBulk, batch_size=self.trainBatchSize, shuffle=True, pin_memory=True, num_workers=0)
+                return DataLoader(trainBulk, batch_size=self.trainBatchSize, shuffle=True, num_workers=0)
             else:
                 return None
         elif (kind == "validation"):
             valiBulk = self.bulkGenerator.nextValiBulk()
             if (valiBulk is not None):
-                return DataLoader(valiBulk, batch_size=self.valiBatchSize, pin_memory=True, num_workers=0)
+                return DataLoader(valiBulk, batch_size=self.valiBatchSize, num_workers=0)
             else:
                 return None
         else:
@@ -339,8 +339,8 @@ class Train():
 
                     uni, uniCount = np.unique(
                         lPred.data.numpy(), return_counts=True)
-                    print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
-                          "mean:", torch.mean(lPred), "unique count:", uniCount)
+                    # print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
+                    #      "mean:", torch.mean(lPred), "unique count:", uniCount)
                     if (i == 800):
                         print("unique values:", uni.tolist())
 
@@ -382,7 +382,7 @@ class Train():
                         break
 
                 # for testing
-                if (datasetCount == 2):
+                if (datasetCount == 19):
                     break
 
                 datasetCount += 1
@@ -413,7 +413,7 @@ class Train():
 
                     # load dataset in to device
                     batchData, l = batchData.to(
-                        dev, non_blocking=True), l.to(dev, non_blocking=True)
+                        dev), l.to(dev)
                     # inferencing
                     lPred = model(batchData)
                     # assert data contain no nan
@@ -455,7 +455,7 @@ if __name__ == '__main__':
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
-        "recordsNum": 2400 * 1200 // 3 + 1,  # data size load in memory, 0.9GB
+        "recordsNum": 2400 * 1200 // 20 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
