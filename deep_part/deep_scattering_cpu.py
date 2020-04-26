@@ -117,7 +117,6 @@ class DsDataset(Dataset):
         return len(self.pairs)
 
     def format(self):
-        max = 0
         for key, val in self.pairs.items():
             assert(len(val) == 2252 * 4)
             # 'f' stands for 32 bit float
@@ -143,15 +142,12 @@ class DsDataset(Dataset):
             assert(np.isfinite(X).all())
             assert(not np.isnan(X).any())
 
-            valMax = np.amax(X)
-            if valMax > max:
-                max = valMax
             self.pairs[key] = (X, y)
 
-        # normalize to [0, 1] except for gamma
-        print("testing::max:", max)
+        # normalize to except for gamma
+        # print("testing::max:", max)
         for key, (X, y) in self.pairs.items():
-            X[:225, :] /= max
+            X[:225, :] /= 9
             assert(np.shape(X) == (226, 10))
             self.pairs[key] = (X, y)
 
@@ -282,7 +278,7 @@ class Train():
         model.to(dev)
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-4)  # learning rate grows linearly with batchsize
+            model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
         for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
