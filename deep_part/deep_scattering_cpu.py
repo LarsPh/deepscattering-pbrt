@@ -188,7 +188,7 @@ class BulkGenerator():
         else:
             self.accessTimes = fileRecordsNum // recordsNum + 1
         self.mapSize = mapSize
-        assert(self.accessTimes == 20)
+        assert(self.accessTimes == 4)
         self.dsLMDB = None
         valiFileSize = self.fileNum / maxEpoch
         self.maxEpoch = maxEpoch
