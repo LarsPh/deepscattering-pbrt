@@ -331,7 +331,7 @@ class Train():
                         uni, uniCount = np.unique(
                             lPred.data.numpy(), return_counts=True)
                         print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
-                             "mean:", torch.mean(lPred), "unique count:", uniCount)
+                              "mean:", torch.mean(lPred), "unique count:", uniCount)
                         print("unique values:", uni.tolist())
 
                     # clamping predition values less equal to -1
@@ -445,7 +445,7 @@ if __name__ == '__main__':
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 1589429,  # samples for file 1196, 18GB
-        "recordsNum": 1589429 # // 5 + 1,  # data size load in memory, 0.9GB
+        "recordsNum": 1589429,  # // 5 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
