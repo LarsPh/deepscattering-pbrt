@@ -149,6 +149,7 @@ class DsDataset(Dataset):
             self.pairs[key] = (X, y)
 
         # normalize to [0, 1] except for gamma
+        print("testing::max:", max)
         for key, (X, y) in self.pairs.items():
             X[:225, :] /= max
             assert(np.shape(X) == (226, 10))
@@ -191,7 +192,7 @@ class BulkGenerator():
         else:
             self.accessTimes = fileRecordsNum // recordsNum + 1
         self.mapSize = mapSize
-        assert(self.accessTimes == 1)
+        assert(self.accessTimes == 2)
         self.dsLMDB = None
         valiFileSize = self.fileNum / maxEpoch
         self.maxEpoch = maxEpoch
@@ -458,7 +459,7 @@ if __name__ == '__main__':
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
-        "recordsNum": 2400 * 1200,  # // 20 + 1,  # data size load in memory, 0.9GB
+        "recordsNum": 2400 * 1200 // 2 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
