@@ -88,15 +88,15 @@ class DsLMDB():
         txn = self.env.begin()
         # return array
         pairs = {}  # type: {int: bytes}
-        corruptedCount = 0
+        notFoundCount = 0
         for key in range(start, stop):
             bKey = key.to_bytes(4, byteorder='little')
             val = txn.get(bKey)
             if val is not None:
-                pairs[key-start-corruptedCount] = val
+                pairs[key-start-notFoundCount] = val
             else:
-                corruptedCount += 1
-        print(corruptedCount, "records corrupted in",
+                notFoundCount += 1
+        print(notFoundCount, "records not found in",
               self.path[-8:].split('/')[1])
         txn.commit()
         return pairs
