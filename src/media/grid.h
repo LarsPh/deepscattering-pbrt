@@ -89,6 +89,9 @@ class GridDensityMedium : public Medium {
     Point3f World2Medium(Point3f p) { return WorldToMedium(p); }
     Point3f Medium2World(Point3f p) { return Inverse(WorldToMedium)(p); }
 
+    // WZR: make invMaxDensity public for recording normalized data 
+    Float invMaxDensity;
+
   private:
     // GridDensityMedium Private Data
     const Spectrum sigma_a, sigma_s;
@@ -97,7 +100,6 @@ class GridDensityMedium : public Medium {
     const Transform WorldToMedium;
     std::unique_ptr<Float[]> density;
     Float sigma_t;
-    Float invMaxDensity;
 };
 
 }  // namespace pbrt

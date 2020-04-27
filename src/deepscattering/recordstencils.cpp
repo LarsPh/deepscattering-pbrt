@@ -28,7 +28,8 @@ void RecordStencils::record(Float* data) {
                      {
                         p = a + Vector3f(i * dx, j * dy, m * dz);
                         Point3f pMedium = medium->World2Medium(Stencils2World(p));
-                        Float density = medium->Density(pMedium);
+                        Float density =
+                            medium->Density(pMedium) * medium->invMaxDensity;
 
                         /*if (i < 3 && j < 3 && m < 3)
                             LOG(INFO)
