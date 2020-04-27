@@ -145,11 +145,11 @@ class DsDataset(Dataset):
             self.pairs[key] = (X, y)
 
         # normalize to except for gamma
-        # print("testing::max:", max)
-        # for key, (X, y) in self.pairs.items():
-        #     X[225, :] *= 5
-        #     assert(np.shape(X) == (226, 10))
-        #     self.pairs[key] = (X, y)
+        print("testing::max:", max)
+        for key, (X, y) in self.pairs.items():
+            X[:225, :] /= 9
+            assert(np.shape(X) == (226, 10))
+            self.pairs[key] = (X, y)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
@@ -279,7 +279,7 @@ class Train():
         model = DSModel()
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
+            model.parameters(), lr=1e-6)  # learning rate grows linearly with batchsize
         for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
