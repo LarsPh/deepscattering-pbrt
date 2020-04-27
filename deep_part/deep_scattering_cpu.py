@@ -146,10 +146,10 @@ class DsDataset(Dataset):
 
         # normalize to except for gamma
         # print("testing::max:", max)
-        for key, (X, y) in self.pairs.items():
-            X[225, :] *= 5
-            assert(np.shape(X) == (226, 10))
-            self.pairs[key] = (X, y)
+        # for key, (X, y) in self.pairs.items():
+        #     X[225, :] *= 5
+        #     assert(np.shape(X) == (226, 10))
+        #     self.pairs[key] = (X, y)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
@@ -188,7 +188,7 @@ class BulkGenerator():
         else:
             self.accessTimes = fileRecordsNum // recordsNum + 1
         self.mapSize = mapSize
-        assert(self.accessTimes == 1)
+        assert(self.accessTimes == 5)
         self.dsLMDB = None
         valiFileSize = self.fileNum / maxEpoch
         self.maxEpoch = maxEpoch
@@ -373,7 +373,7 @@ class Train():
                         break
 
                 # for testing
-                if (datasetCount == 0):
+                if (datasetCount == 4):
                     break
 
                 datasetCount += 1
@@ -445,8 +445,8 @@ if __name__ == '__main__':
         "dataPath": "/home/LarsMPace/ds_db/",
         "modelPath": "/home/LarsMPace/sync/models/",
         "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
-        "fileRecordsNum": 1000000,  # samples for file 1196, 18GB
-        "recordsNum": 1000000,  # // 5 + 1,  # data size load in memory, 0.9GB
+        "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
+        "recordsNum": 2400 * 1200 // 5 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
