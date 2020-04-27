@@ -146,10 +146,10 @@ class DsDataset(Dataset):
 
         # normalize to except for gamma
         # print("testing::max:", max)
-        for key, (X, y) in self.pairs.items():
-            X[:225, :] /= 9
-            assert(np.shape(X) == (226, 10))
-            self.pairs[key] = (X, y)
+        # for key, (X, y) in self.pairs.items():
+        #    X[:225, :] /= 9
+        #    assert(np.shape(X) == (226, 10))
+        #    self.pairs[key] = (X, y)
 
     def cleanNan(self, X):
         it = np.nditer(X, op_flags=['readwrite'], flags=['multi_index'])
@@ -327,11 +327,12 @@ class Train():
                     optimizer.zero_grad()
                     lPred = model(batchData)
                     # for testing
-                    if (50 < i < 60):
-                        uni, uniCount = np.unique(
-                            lPred.data.numpy(), return_counts=True)
-                        print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
-                              "mean:", torch.mean(lPred), "unique count:", uniCount)
+  
+                    uni, uniCount = np.unique(
+                        lPred.data.numpy(), return_counts=True)
+                    print("shape:", list(lPred.size()), "max:", torch.max(lPred), "min:", torch.min(lPred),
+                          "mean:", torch.mean(lPred), "unique count:", uniCount)
+                    if (i == 50):
                         print("unique values:", uni.tolist())
 
                     # clamping predition values less equal to -1
