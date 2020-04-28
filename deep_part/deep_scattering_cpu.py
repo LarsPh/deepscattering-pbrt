@@ -280,45 +280,43 @@ class Train():
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
             model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
-        for epoch in range(self.maxEpoch):
-            # for testing
-            if (epoch == 1):
+
+        # measure time
+        # for gpu
+        # epochStart = torch.cuda.Event(enable_timing=True)
+        # epochEnd = torch.cuda.Event(enable_timing=True)
+        # datasetStart = torch.cuda.Event(enable_timing=True)
+        # datasetEnd = torch.cuda.Event(enable_timing=True)
+        # epochStart.record()
+        # for cpu
+        allStart = time.time()
+
+        # TODO: delete cross validation
+        self.bulkGenerator = BulkGenerator(
+            self.dataPath, 1, self.maxEpoch, self.fileRecordsNum,
+            self.recordsNum, self.mapSize)
+
+        datasetCount = 0
+
+        while (True):
+            # report time for loading a training dataset
+            print("start to load dataset", datasetCount)
+            loadingStart = time.time()
+            dataGenarator = self.nextDataGenarator(kind="train")
+            print("time for loading dataset",
+                  datasetCount, ":", (time.time()-loadingStart)/60, "min")
+
+            if (dataGenarator is None):
                 break
-            # measure time
+
+            print("start to train dataset", datasetCount)
             # for gpu
-            # epochStart = torch.cuda.Event(enable_timing=True)
-            # epochEnd = torch.cuda.Event(enable_timing=True)
-            # datasetStart = torch.cuda.Event(enable_timing=True)
-            # datasetEnd = torch.cuda.Event(enable_timing=True)
-            # epochStart.record()
+            # datasetStart.record()
             # for cpu
-            epochStart = time.time()
-
-            self.bulkGenerator = BulkGenerator(
-                self.dataPath, epoch, self.maxEpoch, self.fileRecordsNum,
-                self.recordsNum, self.mapSize)
-
-            datasetNum = 0
-            datasetCount = 0
-
-            while (True):
-                # report time for loading a training dataset
-                print("start to load epoch", epoch, "dataset", datasetCount)
-                loadingStart = time.time()
-                dataGenarator = self.nextDataGenarator(kind="train")
-                print("time for loading epoch", epoch, "dataset",
-                      datasetCount, ":", (time.time()-loadingStart)/60, "min")
-
-                if (dataGenarator is None):
-                    break
-
-                print("start to train epoch", epoch, "dataset", datasetCount)
-                # for gpu
-                # datasetStart.record()
-                # for cpu
-                datasetStart = time.time()
-                batchNum = len(dataGenarator)
-
+            datasetStart = time.time()
+            batchNum = len(dataGenarator)
+            for epoch in range(self.maxEpoch):
+                print("start training dataset", datasetCount, "epoch", epoch)
                 for i, (batchData, l) in enumerate(dataGenarator):
                     # batchStart = torch.cuda.Event(enable_timing=True)
                     # batchEnd = torch.cuda.Event(enable_timing=True)
@@ -350,7 +348,7 @@ class Train():
                     # print("time for training a minibatch in epoch", epoch, ", dataset",
                     #       datasetCount, ":", batchStart.elapsed_time(batchEnd) / 1000, "seconds")
                     nonlogLoss = lossFn(lPred, l)
-                    pos = epoch * datasetNum * batchNum + datasetCount * batchNum + i
+                    pos = datasetCount * batchNum * epoch + batchNum * epoch + i
 
                     self.writer.add_scalar('lPred', torch.mean(lPred), pos)
                     self.writer.add_scalar('l', torch.mean(l), pos)
@@ -360,78 +358,76 @@ class Train():
                     self.writer.add_scalar('non-log loss', nonlogLoss, pos)
                     self.writer.add_scalar('training loss', loss, pos)
 
-                # report time for training a dataset
+            # report time for training a dataset
 
-                print("time for training epoch", epoch, ", dataset",
-                      datasetCount, ":", (time.time() - datasetStart) / 60, "min")
+            print("time for training dataset",
+                  datasetCount, ":", (time.time() - datasetStart) / 60, "min")
 
-                if (datasetCount == 0):
-                    for data in dataGenarator:
-                        # hack to make add graph work, seems there's a bug of cannot
-                        # omit the 'data' parameter for add_graph...
-                        self.writer.add_graph(model, data[0])
-                        break
-
-                # for testing
-                if (datasetCount == 4):
+            if (datasetCount == 0):
+                for data in dataGenarator:
+                    # hack to make add graph work, seems there's a bug of cannot
+                    # omit the 'data' parameter for add_graph...
+                    self.writer.add_graph(model, data[0])
                     break
 
-                datasetCount += 1
+            # for testing
+            if (datasetCount == 4):
+                break
 
-            # report time for a training epoch
-            datasetNum = datasetCount
-            print("time for training epoch ", epoch,
-                  ": ", (time.time() - epochStart) / 60, "min")
+            datasetCount += 1
 
-            torch.save(model.state_dict(), self.modelPath+"model"+str(epoch))
-            # for testing: do not validate
-            return 0
+        # report time for a training epoch
+        print("time for training:", (time.time() - allStart) / 60, "min")
 
-            # validation
-            valiLoss = 0
-            valiCount = 0
-            loadingStart = time.time()
-            dataGenarator = self.nextDataGenarator(kind="validation")
-            print("time for validating epoch", epoch, "dataset",
-                  datasetCount, ":", time.time()-loadingStart)
+        torch.save(model.state_dict(), self.modelPath+"model"+str(epoch))
+        # for testing: do not validate
+        return 0
 
-            epochStart.record()
-            while (dataGenarator is not None):
-                for i, (batchData, l) in enumerate(dataGenarator):
-                    print("start to validate epoch",
-                          epoch, "dataset", valiCount)
-                    datasetStart.record()
+        # validation
+        valiLoss = 0
+        valiCount = 0
+        loadingStart = time.time()
+        dataGenarator = self.nextDataGenarator(kind="validation")
+        print("time for validating epoch", epoch, "dataset",
+              datasetCount, ":", time.time()-loadingStart)
 
-                    # load dataset in to device
-                    batchData, l = batchData.to(
-                        dev), l.to(dev)
-                    # inferencing
-                    lPred = model(batchData)
-                    # assert data contain no nan
-                    assert(not torch.isnan(lPred).any())
-                    valiLoss += float(lossFn(torch.log1p(lPred),
-                                             torch.log1p(l)))
+        allStart.record()
+        while (dataGenarator is not None):
+            for i, (batchData, l) in enumerate(dataGenarator):
+                print("start to validate epoch",
+                      epoch, "dataset", valiCount)
+                datasetStart.record()
 
-                    # report time for validating a dataset
-                    print("time for validation epoch", epoch, ", dataset:",
-                          valiCount, ":", (time.time() - datasetStart) / 60, "min")
+                # load dataset in to device
+                batchData, l = batchData.to(
+                    dev), l.to(dev)
+                # inferencing
+                lPred = model(batchData)
+                # assert data contain no nan
+                assert(not torch.isnan(lPred).any())
+                valiLoss += float(lossFn(torch.log1p(lPred),
+                                         torch.log1p(l)))
 
-                    # report time for loading a validation dataset
-                    loadingStart = time.time()
-                    dataGenarator = self.nextDataGenarator(kind="validation")
-                    print("time for validating epoch", epoch, "dataset",
-                          datasetCount, ":", time.time()-loadingStart)
+                # report time for validating a dataset
+                print("time for validation epoch", epoch, ", dataset:",
+                      valiCount, ":", (time.time() - datasetStart) / 60, "min")
 
-                    valiCount += 1
+                # report time for loading a validation dataset
+                loadingStart = time.time()
+                dataGenarator = self.nextDataGenarator(kind="validation")
+                print("time for validating epoch", epoch, "dataset",
+                      datasetCount, ":", time.time()-loadingStart)
 
-            # recording loss and saving model
-            self.writer.add_scalar(
-                'validate loss', valiLoss / valiCount, epoch)
-            torch.save(model.state_dict(), self.modelPath+"model"+str(epoch))
+                valiCount += 1
 
-            # report time for a validation epoch
-            print("time for validating epoch ", epoch,
-                  ": ", (time.time() - epochStart) / 60, "min")
+        # recording loss and saving model
+        self.writer.add_scalar(
+            'validate loss', valiLoss / valiCount, epoch)
+        torch.save(model.state_dict(), self.modelPath+"model"+str(epoch))
+
+        # report time for a validation epoch
+        print("time for validating epoch ", epoch,
+              ": ", (time.time() - allStart) / 60, "min")
 
 
 # set device
@@ -444,7 +440,7 @@ if __name__ == '__main__':
     params = {
         "dataPath": "/home/LarsMPace/ds_db/",
         "modelPath": "/home/LarsMPace/sync/models/",
-        "folds": 1,  # 6, folds number for cross validation, each fold contain at least one image
+        "folds": 10,
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
         "recordsNum": 2400 * 1200 // 5 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
