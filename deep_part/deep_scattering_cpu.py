@@ -279,7 +279,7 @@ class Train():
         model = DSModel()
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
+            model.parameters(), lr=1e-4)  # learning rate grows linearly with batchsize
 
         # measure time
         # for gpu
