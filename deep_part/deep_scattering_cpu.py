@@ -142,6 +142,7 @@ class DsDataset(Dataset):
             assert(np.isfinite(X).all())
             assert(not np.isnan(X).any())
 
+            X *= 10
             self.pairs[key] = (X, y)
 
         # normalize to except for gamma
@@ -279,7 +280,7 @@ class Train():
         model = DSModel()
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-2)  # learning rate grows linearly with batchsize
+            model.parameters(), lr=1e-3)  # learning rate grows linearly with batchsize
 
         # measure time
         # for gpu
