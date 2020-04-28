@@ -279,7 +279,7 @@ class Train():
         model = DSModel()
         lossFn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
-            model.parameters(), lr=1e-6)  # learning rate grows linearly with batchsize
+            model.parameters(), lr=1e-5)  # learning rate grows linearly with batchsize
         for epoch in range(self.maxEpoch):
             # for testing
             if (epoch == 1):
