@@ -440,7 +440,7 @@ if __name__ == '__main__':
     params = {
         "dataPath": "/home/LarsMPace/ds_db/",
         "modelPath": "/home/LarsMPace/sync/models/",
-        "folds": 10,
+        "folds": 1,
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
         "recordsNum": 2400 * 1200,  # // 5 + 1,  # data size load in memory, 0.9GB
         "trainBatchSize": 500,
