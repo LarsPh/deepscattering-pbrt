@@ -192,7 +192,7 @@ class BulkGenerator():
         self.dsLMDB = None
         valiFileSize = self.fileNum / maxEpoch
         self.maxEpoch = maxEpoch
-        assert(valiFileSize.is_integer() is True)
+        # assert(valiFileSize.is_integer() is True)
         self.valiFileSize = int(valiFileSize)
         # for testing
         self.valiFileSize = 0
