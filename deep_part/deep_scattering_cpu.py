@@ -443,7 +443,7 @@ if __name__ == '__main__':
         "folds": 1,
         "fileRecordsNum": 2400 * 1200,  # samples for file 1196, 18GB
         "recordsNum": 2400 * 1200,  # // 5 + 1,  # data size load in memory, 0.9GB
-        "trainBatchSize": 500,
+        "trainBatchSize": 250,
         "valiBatchSize": 8000,
         "mapSize": 1048576 * 1024 * 36,  # 1GB * 4096 = 36GB
     }
