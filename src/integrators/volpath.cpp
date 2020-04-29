@@ -41,8 +41,8 @@
 #include "scene.h"
 #include "stats.h"
 // WZR:
-#include "deepscattering/dslmdb.h"
-#include "deepscattering/recordstencils.h"
+// #include "deepscattering/dslmdb.h"
+// #include "deepscattering/recordstencils.h"
 #include "lights/distant.h"
 
 namespace pbrt {
