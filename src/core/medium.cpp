@@ -2393,9 +2393,9 @@ Float CloudMie::phaseMie(Float degree, Spectrum &f) const {
     // return Lerp(t, f1, f2);
     Float values[3];
     // with glory 
-    values[0] = 3.0 * alglib::spline1dcalc(CerpR, degree);
-    values[1] = 3.0 * alglib::spline1dcalc(CerpG, degree);
-    values[2] = 3.0 * alglib::spline1dcalc(CerpB, degree);
+    values[0] = 10.0 * alglib::spline1dcalc(CerpR, degree);
+    values[1] = 10.0 * alglib::spline1dcalc(CerpG, degree);
+    values[2] = 10.0 * alglib::spline1dcalc(CerpB, degree);
     f = Spectrum::FromRGB(values);
 
     return alglib::spline1dcalc(CerpPDF, degree);
