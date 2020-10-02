@@ -291,7 +291,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 // debugging.
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
-
+                // declare a vector of radiances inside a pixel
+                std::vector<Spectrum> samples;
+                Spectrum sum;
+                int count = 0;
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
@@ -335,13 +338,55 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
                         ray << " -> L = " << L;
 
+                    
+                    if (samples.size() > 5) {
+                        // compute the average and variance of current radiance
+                        // inside the vector
+                        // average and variance
+                        Spectrum average = sum / count;
+                        Spectrum variance;
+                        for (Spectrum s : samples)
+                            variance += (s - average) * (s - average);
+                        variance /= count;
+                        // interval
+                        Float range[3];
+                        for (int i = 0; i < 3; i++)
+                            range[i] = 1.96 * sqrt(variance[i] / Float(count));
+                        // compare L with the confidance interval and count > 5,
+                        if (
+                            L[0] < average[0] + range[0] &&
+                            L[1] < average[1] + range[1] &&
+                            L[2] < average[2] + range[2] &&
+                            L[0] > average[0] - range[0] &&
+                            L[1] > average[1] - range[1] &&
+                            L[2] > average[2] - range[2]) {
+                            // if inside, add this sample to film, report count
+                            // and break
+                            std::cout << ++count << std::endl;
+                            // Add camera ray's contribution to image
+                            filmTile->AddSample(cameraSample.pFilm, L,
+                                                rayWeight);
+
+                            // Free _MemoryArena_ memory from computing image
+                            // sample value
+                            arena.Reset();
+                            break;
+                        }
+                    }
+                    //add this sample into the vector, and update sum
+                    samples.push_back(L);
+                    sum += L;
+                                           
+                    // count
+                    ++count;
+
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
 
                     // Free _MemoryArena_ memory from computing image sample
                     // value
                     arena.Reset();
-                } while (tileSampler->StartNextSample());
+                } while (true);
             }
             LOG(INFO) << "Finished image tile " << tileBounds;
 

@@ -45,7 +45,9 @@ Sampler::~Sampler() {}
 Sampler::Sampler(int64_t samplesPerPixel) : samplesPerPixel(samplesPerPixel) {}
 CameraSample Sampler::GetCameraSample(const Point2i &pRaster) {
     CameraSample cs;
-    cs.pFilm = (Point2f)pRaster + Get2D();
+    //WZR: Sample same positions inside each pixels
+    Get2D(); // Consume the first sample of position bia
+    cs.pFilm = (Point2f)pRaster;
     cs.time = Get1D();
     cs.pLens = Get2D();
     return cs;

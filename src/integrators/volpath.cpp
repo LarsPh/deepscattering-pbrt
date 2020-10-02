@@ -74,10 +74,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     // out of a medium and thus have their beta value increased.
     Float etaScale = 1;
     // WZR:
-    Spectrum directRadiance = Spectrum(0.f);
-    Float valData[2252] = {0};
+    // Float valData[2254] = {0};
     bool hitMedium = false;
-    int fstMediaBounce = 100000;
 
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
@@ -98,29 +96,9 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Handle scattering at point in medium for volumetric path tracer
             const Distribution1D *lightDistrib =
                 lightDistribution->Lookup(mi.p);
-            // WZR:
-            /* // for glory: dimmer on multiple-scattered radiance to make glory
-            more visually obvious
-            // also multiply phase funtion by a constant number in case weak
-            backward leap cause
-            // radiance value near zero and treated as black.
-            if (bounces == 0)
-                L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
-                                                  true, lightDistrib);
-            else
-                L += 0.1 * beta * UniformSampleOneLight(mi, scene, arena,
-            sampler, true, lightDistrib);
-            // for glory ends */
-
-            // without glory
-            Spectrum dL =
-                beta * UniformSampleOneLight(mi, scene, arena, sampler, true,
-                                             lightDistrib);
-            L += dL;
-            // without glory ends
 
             // WZR: record location and cache direct light radiance
-            if (bounces < fstMediaBounce) {
+            if (bounces == 0) {
                 hitMedium = true;
                 Point3f p = mi.p;
                 std::shared_ptr<AreaLight> light =
@@ -134,7 +112,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                     wLight = light->GetLightDirection(pMediumCenter);
 
                 // record stencils
-                RecordStencils stencils(medium, p, mi.wo, wLight, 0.5f);
+                //      RecordStencils stencils(medium, p, mi.wo, wLight, 0.5f);
                 // how the unit length of stencils 0.5 is computed:
                 // the max scaler for example clouds is 2, all the original
                 // clouds sizes are (2*250)x(2*250)x(2*250) -> 500x500x500
@@ -144,10 +122,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // z-direction length (4 since the stencil is 2x2x4) of the K=10
                 // stencil, which gives the unit length(for K=10) of 1000/4=250.
                 // Then we have (1/2^9)*250 = 0.5 for K=1
-                stencils.record(valData);
-
-                directRadiance = dL;
-                fstMediaBounce = bounces;
+                //      stencils.record(valData);
+            } else {
+                L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
+                                                  true, lightDistrib);
             }
 
             Vector3f wo = -ray.d, wi;
@@ -172,11 +150,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             if (!foundIntersection || bounces >= maxDepth) break;
 
             // Compute scattering functions and skip over medium boundaries
-            isect.ComputeScatteringFunctions(ray, arena, true);
-            // WZR: prevent reflections on area light, for data generation
-            // situation only since for scenes used for data generation, there
-            // is no surface in media. if (!isect.bsdf)
-            if (true) {
+            isect.ComputeScatteringFunctions(ray, arena, true);            
+            if (!isect.bsdf) {
                 ray = isect.SpawnRay(ray.d);
                 bounces--;
                 continue;
@@ -248,26 +223,21 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     }
     ReportValue(pathLength, bounces);
 
-    // if (hitMedium == false) std::cout << "not hit";
 
     if (hitMedium && bounces > 1) {
         // WZR: record multiple-scattered radiance
-        // LOG(INFO) << "WZR: scattered radiance " << L - directRadiance;
-        Spectrum scatteredRadiance = L - directRadiance;
-
-        Float rgb[3];
-        scatteredRadiance.ToRGB(rgb);
-        CHECK_EQ(rgb[0], rgb[1]);
-        CHECK_EQ(rgb[1], rgb[2]);
-        valData[2251] = rgb[0];
+        Spectrum scatteredRadiance = L;
+            
+        // scatteredRadiance.ToRGB(&valData[2251]);
 
         if (scatteredRadiance.MaxComponentValue() != 0)
             DsLMDB::tmpCount1();
         else
             DsLMDB::tmpCount2();
         // Write to database
-        DsLMDB db;
-        db.TxnWrite(valData, sizeof(Float) * 2252);
+        // DsLMDB db;
+        // db.TxnWrite(valData, sizeof(Float) * 2254);
+        
     }
 
     return L;
