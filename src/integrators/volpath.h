@@ -49,7 +49,7 @@ namespace pbrt {
 class VolPathIntegrator : public SamplerIntegrator {
   public:
     // VolPathIntegrator Public Methods
-    VolPathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
+    VolPathIntegrator(int maxDepth, std::shared_ptr<Camera> camera,
                       std::shared_ptr<Sampler> sampler,
                       const Bounds2i &pixelBounds, Float rrThreshold = 1,
                       const std::string &lightSampleStrategy = "spatial")
@@ -71,7 +71,7 @@ class VolPathIntegrator : public SamplerIntegrator {
 
 VolPathIntegrator *CreateVolPathIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+    std::shared_ptr<Camera> camera);
 
 }  // namespace pbrt
 

@@ -52,7 +52,7 @@
 #include "cameras/orthographic.h"
 #include "cameras/perspective.h"
 #include "cameras/realistic.h"
-#include "cameras/reversedenvironment.h"
+#include "cameras/ds.h"
 #include "filters/box.h"
 #include "filters/gaussian.h"
 #include "filters/mitchell.h"
@@ -68,6 +68,7 @@
 #include "integrators/whitted.h"
 #include "lights/diffuse.h"
 #include "lights/distant.h"
+#include "lights/randomdistant.h"
 #include "lights/goniometric.h"
 #include "lights/infinite.h"
 #include "lights/point.h"
@@ -164,7 +165,7 @@ struct TransformSet {
 
 struct RenderOptions {
     // RenderOptions Public Methods
-    Integrator *MakeIntegrator() const;
+    Integrator *MakeIntegrator();
     Scene *MakeScene();
     Camera *MakeCamera() const;
 
@@ -774,6 +775,8 @@ std::shared_ptr<Light> MakeLight(const std::string &name,
                                       paramSet);
     else if (name == "distant")
         light = CreateDistantLight(light2world, paramSet);
+    else if (name == "randomdistant")
+        light = CreateRandomDistantLight(light2world, paramSet);
     else if (name == "infinite" || name == "exinfinite")
         light = CreateInfiniteLight(light2world, paramSet);
     else
@@ -834,8 +837,8 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
     else if (name == "environment")
         camera = CreateEnvironmentCamera(paramSet, animatedCam2World, film,
                                          mediumInterface.outside);
-    else if (name == "reversedenvironment")
-        camera = CreateReversedEnvironmentCamera(paramSet, animatedCam2World,
+    else if (name == "ds")
+        camera = CreateDSCamera(paramSet, animatedCam2World,
                                                  film, mediumInterface.outside);
     else
         Warning("Camera \"%s\" unknown.", name.c_str());
@@ -1677,8 +1680,8 @@ Scene *RenderOptions::MakeScene() {
     return scene;
 }
 
-Integrator *RenderOptions::MakeIntegrator() const {
-    std::shared_ptr<const Camera> camera(MakeCamera());
+Integrator *RenderOptions::MakeIntegrator() {
+    std::shared_ptr<Camera> camera(MakeCamera());
     if (!camera) {
         Error("Unable to create camera");
         return nullptr;

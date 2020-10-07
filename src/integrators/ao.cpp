@@ -43,7 +43,7 @@ namespace pbrt {
 
 // AOIntegrator Method Definitions
 AOIntegrator::AOIntegrator(bool cosSample, int ns,
-                           std::shared_ptr<const Camera> camera,
+                           std::shared_ptr<Camera> camera,
                            std::shared_ptr<Sampler> sampler,
                            const Bounds2i &pixelBounds)
     : SamplerIntegrator(camera, sampler, pixelBounds),
@@ -104,7 +104,7 @@ Spectrum AOIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
 AOIntegrator *CreateAOIntegrator(const ParamSet &params,
                                  std::shared_ptr<Sampler> sampler,
-                                 std::shared_ptr<const Camera> camera) {
+                                 std::shared_ptr<Camera> camera) {
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
     Bounds2i pixelBounds = camera->film->GetSampleBounds();

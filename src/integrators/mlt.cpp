@@ -266,7 +266,7 @@ void MLTIntegrator::Render(const Scene &scene) {
 }
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,
-                                   std::shared_ptr<const Camera> camera) {
+                                   std::shared_ptr<Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int nBootstrap = params.FindOneInt("bootstrapsamples", 100000);
     int64_t nChains = params.FindOneInt("chains", 1000);

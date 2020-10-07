@@ -61,6 +61,8 @@ class Camera {
     virtual Spectrum Sample_Wi(const Interaction &ref, const Point2f &u,
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;
+    // WZR:
+    virtual void Preprocess(const Scene &scene);
 
     // Camera Public Data
     AnimatedTransform CameraToWorld;

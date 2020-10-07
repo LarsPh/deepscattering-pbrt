@@ -45,6 +45,7 @@
 
 // WZR
 #include "deepscattering/dslmdb.h"
+#include "boost/math/distributions/students_t.hpp"
 
 namespace pbrt {
 
@@ -241,8 +242,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // WZR: Initialze static class members
     CloudMie::createCerp();
     
-    DsLMDB::OpenEnv(
-        "/home/LarsMPace/ds_db/db_001");
+    //DsLMDB::OpenEnv(
+        //"/home/LarsMPace/ds_db/db_001");
         //"D:/Computer "
         //"Science/UJiangnanGraduationProject/Contents/Advanced/DL&"
         //"Graphics/DeepScattering/houdini_projects/Cloud/deepscattering_db/db_1196");
@@ -292,8 +293,13 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
                 // declare a vector of radiances inside a pixel
-                std::vector<Spectrum> samples;
                 Spectrum sum;
+                Spectrum sqSum;
+                Float d = 0.02;
+                Float alpha = 0.05;
+                int n = int(log(alpha) / log(1. - d)) + 1;
+                int nn = n;
+                    
                 int count = 0;
                 do {
                     // Initialize _CameraSample_ for current sample
@@ -338,55 +344,72 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
                         ray << " -> L = " << L;
 
+                    ++count;                    
+                    sum += L;
+                    sqSum += L * L;
+
+                    // Add camera ray's contribution to image
+                    filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
                     
-                    if (samples.size() > 5) {
-                        // compute the average and variance of current radiance
-                        // inside the vector
-                        // average and variance
-                        Spectrum average = sum / count;
-                        Spectrum variance;
-                        for (Spectrum s : samples)
-                            variance += (s - average) * (s - average);
-                        variance /= count;
-                        // interval
-                        Float range[3];
+                    if (count == nn) {
+                        //use relative variance for better convergenced margian
+                        //Float lenA =
+                        //    sqrt(sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / count;
+                        
+                        //Spectrum l = sqSum - sum * sum / count;
+                        //if (lenA != 0) l /= lenA;
+                        Spectrum rSqrSum = sum;
                         for (int i = 0; i < 3; i++)
-                            range[i] = 1.96 * sqrt(variance[i] / Float(count));
-                        // compare L with the confidance interval and count > 5,
-                        if (
-                            L[0] < average[0] + range[0] &&
-                            L[1] < average[1] + range[1] &&
-                            L[2] < average[2] + range[2] &&
-                            L[0] > average[0] - range[0] &&
-                            L[1] > average[1] - range[1] &&
-                            L[2] > average[2] - range[2]) {
+                            if (sum[i] == 0)
+                                rSqrSum[i] = 0;
+                            else
+                                rSqrSum[i] = 1. / (sum[i] * sum[i]);
+                        Spectrum l = count * (count * sqSum * rSqrSum - 1.);
+                        boost::math::students_t dist(count - 1);
+                        Float t = boost::math::quantile(complement(dist, alpha / 2));
+                        
+                        Float r =  count * (count - 1) * d * d / (t * t);
+                        // compare l with the confidance interval and count > 5,
+                        if (l[0] <= r && l[1] <= r && l[2] <= r) {
                             // if inside, add this sample to film, report count
                             // and break
-                            std::cout << ++count << std::endl;
-                            // Add camera ray's contribution to image
-                            filmTile->AddSample(cameraSample.pFilm, L,
-                                                rayWeight);
+
+                            
+                            // if (count > 149) {
+                            //    std::cout << count << std::endl;
+
+                            //    std::cout << count + 1 << "\t" << L[0] << " "
+                            //              << L[1] << " " << L[2] << "\t"
+                            //              << average[0] << " " << average[1]
+                            //              << " " << average[2] << "\t"
+                            //              << range[0] << " " << range[1] << "
+                            //              "
+                            //              << range[2] << std::endl;
+
+                            //              //<< average[0] - range[0] << "-"
+                            //              //<< average[0] + range[0] << " "
+                            //              //<< average[1] - range[1] << "-"
+                            //              //<< average[1] + range[1] << " "
+                            //              //<< average[2] - range[2] << "-"
+                            //              //<< average[2] + range[2] <<
+                            //              std::endl;
+                            //}
+                            
 
                             // Free _MemoryArena_ memory from computing image
                             // sample value
                             arena.Reset();
+                            tileSampler->StartNextSample();
                             break;
+                        } else {
+                            nn += n;
                         }
                     }
-                    //add this sample into the vector, and update sum
-                    samples.push_back(L);
-                    sum += L;
-                                           
-                    // count
-                    ++count;
-
-                    // Add camera ray's contribution to image
-                    filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
 
                     // Free _MemoryArena_ memory from computing image sample
                     // value
-                    arena.Reset();
-                } while (true);
+                    arena.Reset();                   
+                } while (tileSampler->StartNextSample());
             }
             LOG(INFO) << "Finished image tile " << tileBounds;
 

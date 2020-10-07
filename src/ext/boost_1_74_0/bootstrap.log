@@ -1,0 +1,80 @@
+LOCALAPPDATA=C:\Users\LarsMPace\AppData\Local
+Found with vswhere D:\Softwares\Microsoft Visual Studio\2019\Community
+Found with vswhere D:\Softwares\Microsoft Visual Studio\2019\Community
+Call_If_Exists "D:\Softwares\Microsoft Visual Studio\2019\Community\Common7\Tools\..\..\VC\Auxiliary\Build\vcvarsall.bat"  AMD64
+**********************************************************************
+** Visual Studio 2019 Developer Command Prompt v16.7.2
+** Copyright (c) 2020 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+###
+### Using 'vc142' toolset.
+###
+
+D:\ChromeDownloads\Compressed\boost_1_74_0\tools\build\src\engine>cl /nologo /MP /MT /TP /Feb2 /wd4996 /O2 /GL   -DNDEBUG  builtins.cpp class.cpp command.cpp compile.cpp constants.cpp cwd.cpp debug.cpp debugger.cpp execcmd.cpp execnt.cpp filent.cpp filesys.cpp frames.cpp function.cpp glob.cpp hash.cpp hcache.cpp hdrmacro.cpp headers.cpp jam.cpp jamgram.cpp lists.cpp make.cpp make1.cpp md5.cpp mem.cpp modules.cpp native.cpp object.cpp option.cpp output.cpp parse.cpp pathnt.cpp pathsys.cpp regexp.cpp rules.cpp scan.cpp search.cpp jam_strings.cpp startup.cpp subst.cpp sysinfo.cpp timestamp.cpp variable.cpp w32_getreg.cpp modules/order.cpp modules/path.cpp modules/property-set.cpp modules/regex.cpp modules/sequence.cpp modules/set.cpp /link kernel32.lib advapi32.lib user32.lib 
+builtins.cpp
+class.cpp
+command.cpp
+compile.cpp
+constants.cpp
+cwd.cpp
+debug.cpp
+debugger.cpp
+execcmd.cpp
+execnt.cpp
+filent.cpp
+filesys.cpp
+frames.cpp
+function.cpp
+glob.cpp
+hash.cpp
+hcache.cpp
+hdrmacro.cpp
+headers.cpp
+jam.cpp
+jamgram.cpp
+lists.cpp
+make.cpp
+make1.cpp
+md5.cpp
+mem.cpp
+modules.cpp
+native.cpp
+object.cpp
+option.cpp
+output.cpp
+parse.cpp
+pathnt.cpp
+pathsys.cpp
+regexp.cpp
+rules.cpp
+scan.cpp
+search.cpp
+jam_strings.cpp
+startup.cpp
+subst.cpp
+sysinfo.cpp
+timestamp.cpp
+variable.cpp
+w32_getreg.cpp
+order.cpp
+path.cpp
+property-set.cpp
+regex.cpp
+sequence.cpp
+set.cpp
+Generating code
+Finished generating code
+
+D:\ChromeDownloads\Compressed\boost_1_74_0\tools\build\src\engine>dir *.exe 
+ Volume in drive D is MyFiles
+ Volume Serial Number is 6810-E0EE
+
+ Directory of D:\ChromeDownloads\Compressed\boost_1_74_0\tools\build\src\engine
+
+10/04/2020  11:38 AM           491,520 b2.exe
+               1 File(s)        491,520 bytes
+               0 Dir(s)  83,899,924,480 bytes free
+
+D:\ChromeDownloads\Compressed\boost_1_74_0\tools\build\src\engine>copy /b .\b2.exe .\bjam.exe 
+        1 file(s) copied.

@@ -119,22 +119,6 @@ class HenyeyGreenstein : public PhaseFunction {
 
 // WZR: CloudMie Declarations
 
-// Comparing in precision 2
-
-/*
-struct RoundedHash {
-    std::size_t operator()(const Float &f) const {
-        return std::hash<float>()(round(f * 100) / 100);
-    }
-};
-
-struct RoundedEqual {
-    bool operator()(const Float &lhs, const Float &rhs) const {
-        return round(lhs * 100) / 100 == round(rhs * 100) / 100;
-    }
-};
-*/
-
 class CloudMie : public PhaseFunction {
   public:
     // CloudMie Public Methods
@@ -148,11 +132,7 @@ class CloudMie : public PhaseFunction {
         return StringPrintf("[ Mie parameters: TODO ]");
     }
     static void createCerp();
-    //static void initializeCDF();
-    //static unoMap inversedCDF4;
-    //static unoMap inversedCDF8;
-    //static unoMap inversedCDF9;
-    //static unoMap inversedCDFe;
+    Float getPDFRawData(int index);
 
   private:
     
@@ -170,8 +150,6 @@ class CloudMie : public PhaseFunction {
 
     Float phaseMie(Float degree) const;
     Float phaseMie(Float degree, Spectrum &f) const;
-    /*Float evaluate(Float u0, Float precision, unoMap &inversedCDF, Float r1,
-                   Float r2) const;*/
 };
 
 // MediumInterface Declarations

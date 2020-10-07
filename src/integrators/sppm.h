@@ -50,7 +50,7 @@ namespace pbrt {
 class SPPMIntegrator : public Integrator {
   public:
     // SPPMIntegrator Public Methods
-    SPPMIntegrator(std::shared_ptr<const Camera> &camera, int nIterations,
+    SPPMIntegrator(std::shared_ptr<Camera> &camera, int nIterations,
                    int photonsPerIteration, int maxDepth,
                    Float initialSearchRadius, int writeFrequency)
         : camera(camera),
@@ -65,7 +65,7 @@ class SPPMIntegrator : public Integrator {
 
   private:
     // SPPMIntegrator Private Data
-    std::shared_ptr<const Camera> camera;
+    std::shared_ptr<Camera> camera;
     const Float initialSearchRadius;
     const int nIterations;
     const int maxDepth;
@@ -74,7 +74,7 @@ class SPPMIntegrator : public Integrator {
 };
 
 Integrator *CreateSPPMIntegrator(const ParamSet &params,
-                                 std::shared_ptr<const Camera> camera);
+                                 std::shared_ptr<Camera> camera);
 
 }  // namespace pbrt
 

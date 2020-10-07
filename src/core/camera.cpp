@@ -111,5 +111,6 @@ Spectrum Camera::Sample_Wi(const Interaction &ref, const Point2f &u,
     LOG(FATAL) << "Camera::Sample_Wi() is not implemented!";
     return Spectrum(0.f);
 }
-
+void Camera::Preprocess(const Scene& scene) {
+}
 }  // namespace pbrt

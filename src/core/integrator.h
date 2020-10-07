@@ -77,7 +77,7 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 class SamplerIntegrator : public Integrator {
   public:
     // SamplerIntegrator Public Methods
-    SamplerIntegrator(std::shared_ptr<const Camera> camera,
+    SamplerIntegrator(std::shared_ptr<Camera> camera,
                       std::shared_ptr<Sampler> sampler,
                       const Bounds2i &pixelBounds)
         : camera(camera), sampler(sampler), pixelBounds(pixelBounds) {}
@@ -97,7 +97,7 @@ class SamplerIntegrator : public Integrator {
 
   protected:
     // SamplerIntegrator Protected Data
-    std::shared_ptr<const Camera> camera;
+    std::shared_ptr<Camera> camera;
 
   private:
     // SamplerIntegrator Private Data

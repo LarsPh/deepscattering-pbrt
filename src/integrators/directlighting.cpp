@@ -96,7 +96,7 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
 
 DirectLightingIntegrator *CreateDirectLightingIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera) {
+    std::shared_ptr<Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
     LightStrategy strategy;
     std::string st = params.FindOneString("strategy", "all");

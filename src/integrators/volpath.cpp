@@ -55,6 +55,7 @@ STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
 void VolPathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
+    camera->Preprocess(scene);
 }
 
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
@@ -245,7 +246,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
 VolPathIntegrator *CreateVolPathIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera) {
+    std::shared_ptr<Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);

@@ -68,7 +68,7 @@ Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
 
 int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                           MemoryArena &arena, int maxDepth,
-                          const Camera &camera, const Point2f &pFilm,
+                          Camera &camera, const Point2f &pFilm,
                           Vertex *path) {
     if (maxDepth == 0) return 0;
     ProfilePhase _(Prof::BDPTGenerateSubpath);
@@ -445,7 +445,7 @@ Spectrum ConnectBDPT(
     const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
     int t, const Distribution1D &lightDistr,
     const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Point2f *pRaster,
+    Camera &camera, Sampler &sampler, Point2f *pRaster,
     Float *misWeightPtr) {
     ProfilePhase _(Prof::BDPTConnectSubpaths);
     Spectrum L(0.f);
@@ -536,7 +536,7 @@ Spectrum ConnectBDPT(
 
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera) {
+                                     std::shared_ptr<Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
     bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
     bool visualizeWeights = params.FindOneBool("visualizeweights", false);

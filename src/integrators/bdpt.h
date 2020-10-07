@@ -59,14 +59,14 @@ extern Float CorrectShadingNormal(const SurfaceInteraction &isect,
 // EndpointInteraction Declarations
 struct EndpointInteraction : Interaction {
     union {
-        const Camera *camera;
+        Camera *camera;
         const Light *light;
     };
     // EndpointInteraction Public Methods
     EndpointInteraction() : Interaction(), light(nullptr) {}
-    EndpointInteraction(const Interaction &it, const Camera *camera)
+    EndpointInteraction(const Interaction &it, Camera *camera)
         : Interaction(it), camera(camera) {}
-    EndpointInteraction(const Camera *camera, const Ray &ray)
+    EndpointInteraction(Camera *camera, const Ray &ray)
         : Interaction(ray.o, ray.time, ray.medium), camera(camera) {}
     EndpointInteraction(const Light *light, const Ray &r, const Normal3f &nl)
         : Interaction(r.o, r.time, r.medium), light(light) {
@@ -129,7 +129,7 @@ class BDPTIntegrator : public Integrator {
   public:
     // BDPTIntegrator Public Methods
     BDPTIntegrator(std::shared_ptr<Sampler> sampler,
-                   std::shared_ptr<const Camera> camera, int maxDepth,
+                   std::shared_ptr<Camera> camera, int maxDepth,
                    bool visualizeStrategies, bool visualizeWeights,
                    const Bounds2i &pixelBounds,
                    const std::string &lightSampleStrategy = "power")
@@ -145,7 +145,7 @@ class BDPTIntegrator : public Integrator {
   private:
     // BDPTIntegrator Private Data
     std::shared_ptr<Sampler> sampler;
-    std::shared_ptr<const Camera> camera;
+    std::shared_ptr<Camera> camera;
     const int maxDepth;
     const bool visualizeStrategies;
     const bool visualizeWeights;
@@ -184,9 +184,9 @@ struct Vertex {
         return *this;
     }
 
-    static inline Vertex CreateCamera(const Camera *camera, const Ray &ray,
+    static inline Vertex CreateCamera(Camera *camera, const Ray &ray,
                                       const Spectrum &beta);
-    static inline Vertex CreateCamera(const Camera *camera,
+    static inline Vertex CreateCamera(Camera *camera,
                                       const Interaction &it,
                                       const Spectrum &beta);
     static inline Vertex CreateLight(const Light *light, const Ray &ray,
@@ -426,7 +426,7 @@ struct Vertex {
 
 extern int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                                  MemoryArena &arena, int maxDepth,
-                                 const Camera &camera, const Point2f &pFilm,
+                                 Camera &camera, const Point2f &pFilm,
                                  Vertex *path);
 
 extern int GenerateLightSubpath(
@@ -438,19 +438,19 @@ Spectrum ConnectBDPT(
     const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
     int t, const Distribution1D &lightDistr,
     const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Point2f *pRaster,
+    Camera &camera, Sampler &sampler, Point2f *pRaster,
     Float *misWeight = nullptr);
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera);
+                                     std::shared_ptr<Camera> camera);
 
 // Vertex Inline Method Definitions
-inline Vertex Vertex::CreateCamera(const Camera *camera, const Ray &ray,
+inline Vertex Vertex::CreateCamera(Camera *camera, const Ray &ray,
                                    const Spectrum &beta) {
     return Vertex(VertexType::Camera, EndpointInteraction(camera, ray), beta);
 }
 
-inline Vertex Vertex::CreateCamera(const Camera *camera, const Interaction &it,
+inline Vertex Vertex::CreateCamera(Camera *camera, const Interaction &it,
                                    const Spectrum &beta) {
     return Vertex(VertexType::Camera, EndpointInteraction(it, camera), beta);
 }

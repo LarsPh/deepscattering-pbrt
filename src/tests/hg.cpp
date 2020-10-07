@@ -85,16 +85,14 @@ TEST(CloudMie, Normalized) {
     
     CloudMie::createCerp();
     CloudMie mie;
-    Vector3f wo =
-        UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
     Float sum = 0;
-    int nSamples = 100000000;
-    for (int i = 0; i < nSamples; ++i) {
-        Vector3f wi =
-            UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
-        sum += mie.p(wo, wi);
+    int n = 1801;
+    Float t = Pi / 1800.;
+    for (int i = 1; i < n; ++i) {
+        sum += 0.5 * (mie.getPDFRawData(i - 1) * sin(t * (i - 1)) + mie.getPDFRawData(i) * sin(t * i)) * t;
     }
-    // Phase function should integrate to 1/4pi.
-    EXPECT_NEAR(sum / nSamples, 1. / (4. * Pi), 1e-3f);
+    sum *= 2 * Pi;
+    // Phase function should integrate to 1.
+    EXPECT_NEAR(sum, 2, 1e-3f);
 
 }

@@ -500,7 +500,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
 }
 
 Integrator *CreateSPPMIntegrator(const ParamSet &params,
-                                 std::shared_ptr<const Camera> camera) {
+                                 std::shared_ptr<Camera> camera) {
     int nIterations =
         params.FindOneInt("iterations",
                           params.FindOneInt("numiterations", 64));
