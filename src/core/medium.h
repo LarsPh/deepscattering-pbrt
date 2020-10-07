@@ -147,6 +147,7 @@ class CloudMie : public PhaseFunction {
     static alglib::real_1d_array PDF;
     static alglib::real_1d_array CDF;
     static alglib::real_1d_array Theta;
+    static alglib::real_1d_array Test;
 
     Float phaseMie(Float degree) const;
     Float phaseMie(Float degree, Spectrum &f) const;
