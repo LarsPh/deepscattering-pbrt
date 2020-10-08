@@ -65,12 +65,26 @@ class GridDensityMedium : public Medium {
         densityBytes += nx * ny * nz * sizeof(Float);
         memcpy((Float *)density.get(), d, sizeof(Float) * nx * ny * nz);
         // Precompute values for Monte Carlo sampling of _GridDensityMedium_
+        Float maxDensity = 0;
+        Float densitySum = 0;
+        // WZR: set average rho_t to correct value
+        int nonzeroVexels = 0;
+        for (int i = 0; i < nx * ny * nz; ++i) {
+            maxDensity = std::max(maxDensity, density[i]);
+            densitySum += density[i];
+            if (density[i] != 0) ++nonzeroVexels;
+        }
+        // std::cout << nonzeroVexels << std::endl;
+        invMaxDensity = 1 / maxDensity;
+        // 2 for the forward peak of Mie phase funtion
+        Float f = 1. /  (densitySum / nonzeroVexels) * 0.43;
+        this->sigma_a *= f;
+        this->sigma_s *= f;
         sigma_t = (sigma_a + sigma_s)[0];
         if (Spectrum(sigma_t) != sigma_a + sigma_s)
             Error(
                 "GridDensityMedium requires a spectrally uniform attenuation "
                 "coefficient!");
-        Float maxDensity = 0;
         for (int i = 0; i < nx * ny * nz; ++i)
             maxDensity = std::max(maxDensity, density[i]);
         invMaxDensity = 1 / maxDensity;
@@ -94,7 +108,7 @@ class GridDensityMedium : public Medium {
 
   private:
     // GridDensityMedium Private Data
-    const Spectrum sigma_a, sigma_s;
+    Spectrum sigma_a, sigma_s;
     const Float g;
     const int nx, ny, nz;
     const Transform WorldToMedium;

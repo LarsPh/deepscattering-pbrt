@@ -1,4 +1,3 @@
-
 /*
     pbrt source code is Copyright(c) 1998-2016
                         Matt Pharr, Greg Humphreys, and Wenzel Jakob.
@@ -30,17 +29,19 @@
 
  */
 
-
 // media/grid.cpp*
 #include "media/grid.h"
+
+#include "interaction.h"
 #include "paramset.h"
 #include "sampler.h"
 #include "stats.h"
-#include "interaction.h"
 
 namespace pbrt {
 
 STAT_RATIO("Media/Grid steps per Tr() call", nTrSteps, nTrCalls);
+STAT_FLOAT_DISTRIBUTION("Media/Distribution of Rho_t in medium interactions",
+                        distRho_t);
 
 // GridDensityMedium Method Definitions
 Float GridDensityMedium::Density(const Point3f &p) const {
@@ -65,14 +66,20 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     ProfilePhase _(Prof::MediumSample);
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
+    Transform MediumToWorld = Inverse(WorldToMedium);
     // WZR: seems wrong :(
     // Ray rMedium = WorldToMedium(rWorld);
     // Ray ray =
-    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax * rMedium.d.Length());
+    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax *
+    //     rMedium.d.Length());
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
     const Bounds3f b(Point3f(0, 0, 0), Point3f(1, 1, 1));
     Float tMin, tMax;
     if (!b.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
+    // WZR: Optimized for pure medium region
+    //Ray nRayWorld = MediumToWorld
+    //    (Ray(ray.o, Normalize(ray.d), tMax * ray.d.Length()));
+    // rWorld.tMax = nRayWorld.tMax;
 
     // Run delta-tracking iterations to sample a medium interaction
     Float t = tMin;
@@ -83,8 +90,9 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
         // if (gridDensity > 0) DsLMDB::tmpCount();
         if (gridDensity * invMaxDensity > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
-            //WZR:
-            //PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
+            // WZR:
+            // PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
+            ReportValue(distRho_t, gridDensity * sigma_t);
             PhaseFunction *phase = ARENA_ALLOC(arena, CloudMie);
             *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
                                     phase);
@@ -103,7 +111,8 @@ Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
     // WZR: seems wrong :(
     // Ray rMedium = WorldToMedium(rWorld);
     // Ray ray =
-    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax * rMedium.d.Length());
+    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax *
+    //     rMedium.d.Length());
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
     const Bounds3f b(Point3f(0, 0, 0), Point3f(1, 1, 1));
     Float tMin, tMax;

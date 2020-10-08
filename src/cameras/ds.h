@@ -25,9 +25,12 @@ namespace pbrt {
           : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium) {}
         Float GenerateRay(const CameraSample& sample, Ray*) const;
         void Preprocess(const Scene&);
+        void Shuffle();
 
      private:
         Bounds3f sceneBounds;
+        Point3f p;
+        Vector3f dir;
     };
 
     DSCamera* CreateDSCamera(const ParamSet& params,

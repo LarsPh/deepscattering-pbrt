@@ -53,6 +53,8 @@ Light::Light(int flags, const Transform &LightToWorld,
       WorldToLight(Inverse(LightToWorld)) {
     ++numLights;
 }
+// WZR:
+void Light::Shuffle() {}
 
 Light::~Light() {}
 

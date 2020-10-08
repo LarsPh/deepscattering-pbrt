@@ -298,10 +298,15 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 Float d = 0.02;
                 Float alpha = 0.05;
                 int n = int(log(alpha) / log(1. - d)) + 1;
-                int nn = n;
-                    
+                int nn = n;                    
                 int count = 0;
-                do {
+
+                // shuffle camera
+                camera->Shuffle();
+                // shuffle light source, only have one directional light
+                scene.lights[0]->Shuffle();
+
+                do {                    
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
                         tileSampler->GetCameraSample(pixel);
@@ -376,25 +381,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
                             
                             // if (count > 149) {
-                            //    std::cout << count << std::endl;
-
-                            //    std::cout << count + 1 << "\t" << L[0] << " "
-                            //              << L[1] << " " << L[2] << "\t"
-                            //              << average[0] << " " << average[1]
-                            //              << " " << average[2] << "\t"
-                            //              << range[0] << " " << range[1] << "
-                            //              "
-                            //              << range[2] << std::endl;
-
-                            //              //<< average[0] - range[0] << "-"
-                            //              //<< average[0] + range[0] << " "
-                            //              //<< average[1] - range[1] << "-"
-                            //              //<< average[1] + range[1] << " "
-                            //              //<< average[2] - range[2] << "-"
-                            //              //<< average[2] + range[2] <<
-                            //              std::endl;
-                            //}
-                            
+                            //    std::cout << count << std::endl;                            
 
                             // Free _MemoryArena_ memory from computing image
                             // sample value
@@ -410,6 +397,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // value
                     arena.Reset();                   
                 } while (tileSampler->StartNextSample());
+                // filmTile->L
             }
             LOG(INFO) << "Finished image tile " << tileBounds;
 

@@ -63,12 +63,15 @@ class RandomDistantLight : public Light {
                        Float *pdfDir) const;
     void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                 Float *pdfDir) const;
+    // WZR:
+    void Shuffle();
 
   private:
     // RandomDistantLight Private Data
     const Spectrum L;
     Point3f worldCenter;
     Float worldRadius;
+    Vector3f w;
 };
 
 std::shared_ptr<RandomDistantLight> CreateRandomDistantLight(const Transform &light2world,

@@ -63,6 +63,7 @@ class Camera {
                                VisibilityTester *vis) const;
     // WZR:
     virtual void Preprocess(const Scene &scene);
+    virtual void Shuffle();
 
     // Camera Public Data
     AnimatedTransform CameraToWorld;

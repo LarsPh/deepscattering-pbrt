@@ -2456,7 +2456,7 @@ alglib::real_1d_array CloudMie::Test =
 PhaseFunction::~PhaseFunction() {}
 
 // WZR:
-Float CloudMie::getPDFRawData(int index) { return Test[index]; }
+Float CloudMie::getPDFRawData(int index) { return PDF[index]; }
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
                                    Spectrum *sigma_prime_s) {
     for (MeasuredSS &mss : SubsurfaceParameterTable) {

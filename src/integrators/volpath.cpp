@@ -81,11 +81,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
+        // WZR: Optimized for pure medium region
+        // bool foundIntersection;
+        
         bool foundIntersection = scene.Intersect(ray, &isect);
-
         // Sample the participating medium, if present
         MediumInteraction mi;
         if (ray.medium) beta *= ray.medium->Sample(ray, sampler, arena, &mi);
+        // record bounce 0 mi position for each sample and average them, return the average position and get density from there
         if (beta.IsBlack()) break;
 
         // Handle an interaction with a medium or a surface
@@ -124,6 +127,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // stencil, which gives the unit length(for K=10) of 1000/4=250.
                 // Then we have (1/2^9)*250 = 0.5 for K=1
                 //      stencils.record(valData);
+                L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
+                                                  true, lightDistrib);
             } else {
                 L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
                                                   true, lightDistrib);
@@ -134,6 +139,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             ray = mi.SpawnRay(wi);
             specularBounce = false;
         } else {
+            // WZR: Optimized for pure medium region
+            // foundIntersection = scene.Intersect(ray, &isect);
             ++surfaceInteractions;
             // Handle scattering at point on surface for volumetric path tracer
 

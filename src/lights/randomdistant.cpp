@@ -43,13 +43,15 @@ RandomDistantLight::RandomDistantLight(const Transform &LightToWorld, const Spec
     : Light((int)LightFlags::DeltaDirection, LightToWorld, MediumInterface()),
       L(L) {}
 
+void RandomDistantLight::Shuffle() {
+    // WZR: randomlized direction
+    RNG rng;
+    w = UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
+}
 Spectrum RandomDistantLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                  Vector3f *wi, Float *pdf,
                                  VisibilityTester *vis) const {
     ProfilePhase _(Prof::LightSample);
-    // WZR: randomlized direction
-    RNG rng;
-    Vector3f w = UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
     *wi = w;
     *pdf = 1;
     Point3f pOutside = ref.p + w * (2 * worldRadius);

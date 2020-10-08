@@ -12,31 +12,33 @@
 
 namespace pbrt {
 
-    // EnvironmentCamera Method Definitions
+    // DSCamera Method Definitions
+void DSCamera::Shuffle() {
+    // Compute randomlized camera ray direction
+    Point3f center;
+    Float radius;
+    sceneBounds.BoundingSphere(&center, &radius);
+
+    RNG rng;
+    dir =
+        UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
+    Vector3f up(rng.UniformFloat(), rng.UniformFloat(), rng.UniformFloat());
+
+    Point3f look = center + dir;
+    Transform worldToSphere = LookAt(center, look, up);
+    Transform sphereToWorld = Inverse(worldToSphere);
+
+    Point2f bias2 =
+        ConcentricSampleDisk({rng.UniformFloat(), rng.UniformFloat()});
+    Point3f bias3(bias2.x, bias2.y, 0.);
+
+    p = sphereToWorld(worldToSphere(center) + bias3) +
+                Normalize(-dir) * (radius + FLT_EPSILON);
+}
+
     Float DSCamera::GenerateRay(const CameraSample& sample,
         Ray* ray) const {
         ProfilePhase prof(Prof::GenerateCameraRay);
-        // Compute randomlized camera ray direction
-        Point3f center;
-        Float radius;
-        sceneBounds.BoundingSphere(&center, &radius);
-
-        RNG rng;
-        Vector3f dir =
-            UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
-        Vector3f up(rng.UniformFloat(), rng.UniformFloat(), rng.UniformFloat());
-        
-        Point3f look = center + dir;
-        Transform worldToSphere = LookAt(center, look, up);
-        Transform sphereToWorld = Inverse(worldToSphere);
-
-        Point2f bias2 =
-            ConcentricSampleDisk({rng.UniformFloat(), rng.UniformFloat()});
-        Point3f bias3(bias2.x, bias2.y, 0.);
-        
-
-        Point3f p = sphereToWorld(worldToSphere(center) + bias3) +
-                    Normalize(-dir) * (radius + FLT_EPSILON);
         
         *ray = Ray(p, dir, Infinity, Lerp(sample.time, shutterOpen, shutterClose));
         ray->medium = medium;
