@@ -78,6 +78,7 @@ class Light {
     virtual void Pdf_Le(const Ray &ray, const Normal3f &nLight, Float *pdfPos,
                         Float *pdfDir) const = 0;
     virtual void Shuffle();
+    virtual void getDSInfo(Vector3f *);
 
     // Light Public Data
     const int flags;

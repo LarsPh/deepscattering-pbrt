@@ -42,7 +42,6 @@
 #include "stats.h"
 // WZR:
 #include "deepscattering/dslmdb.h"
-#include "deepscattering/recordstencils.h"
 #include "light.h"
 
 namespace pbrt {
@@ -55,7 +54,6 @@ STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
 void VolPathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
-    camera->Preprocess(scene);
 }
 
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
@@ -75,16 +73,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     // out of a medium and thus have their beta value increased.
     Float etaScale = 1;
     // WZR:
-    // Float valData[2254] = {0};
-    bool hitMedium = false;
+    // Float valData[2252] = {0};
 
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
         // WZR: Optimized for pure medium region
-        // bool foundIntersection;
-        
-        bool foundIntersection = scene.Intersect(ray, &isect);
+        bool foundIntersection;                
+        // bool foundIntersection = scene.Intersect(ray, &isect);
         // Sample the participating medium, if present
         MediumInteraction mi;
         if (ray.medium) beta *= ray.medium->Sample(ray, sampler, arena, &mi);
@@ -101,38 +97,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             const Distribution1D *lightDistrib =
                 lightDistribution->Lookup(mi.p);
 
-            // WZR: record location and cache direct light radiance
-            if (bounces == 0) {
-                hitMedium = true;
-                Point3f p = mi.p;
-                std::shared_ptr<AreaLight> light =
-                    std::dynamic_pointer_cast<AreaLight>(scene.lights[0]);
-                GridDensityMedium *medium = (GridDensityMedium *)mi.GetMedium();
-                Point3f pMediumCenter = medium->Medium2World(Point3f(0, 0, 0));
-                // direction of light = pAreaLight - pCamera, pCamera =
-                // pMediumCenter
-                Vector3f wLight = Vector3f(0, 0, 0);
-                if (light != nullptr)
-                    wLight = light->GetLightDirection(pMediumCenter);
-
-                // record stencils
-                //      RecordStencils stencils(medium, p, mi.wo, wLight, 0.5f);
-                // how the unit length of stencils 0.5 is computed:
-                // the max scaler for example clouds is 2, all the original
-                // clouds sizes are (2*250)x(2*250)x(2*250) -> 500x500x500
-                // (according to the "p0 [-1 -1 -1]" and "p1 [1 1 1]" attributes
-                // of the medium in pbrt files), results in size 1000x1000x1000
-                // for the largest scaled clouds. here we align it with the
-                // z-direction length (4 since the stencil is 2x2x4) of the K=10
-                // stencil, which gives the unit length(for K=10) of 1000/4=250.
-                // Then we have (1/2^9)*250 = 0.5 for K=1
-                //      stencils.record(valData);
+            // WZR: ignore direct light radiance
+            if (bounces != 0) 
                 L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
-                                                  true, lightDistrib);
-            } else {
-                L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
-                                                  true, lightDistrib);
-            }
+                                                  true, lightDistrib);            
+             
+            // else 
+            //      L += beta * UniformSampleOneLight(mi, scene, arena, sampler;         
+       
 
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
@@ -140,7 +112,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             specularBounce = false;
         } else {
             // WZR: Optimized for pure medium region
-            // foundIntersection = scene.Intersect(ray, &isect);
+            foundIntersection = scene.Intersect(ray, &isect);
             ++surfaceInteractions;
             // Handle scattering at point on surface for volumetric path tracer
 
@@ -244,8 +216,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             DsLMDB::tmpCount2();
         // Write to database
         // DsLMDB db;
-        // db.TxnWrite(valData, sizeof(Float) * 2254);
-        
+        // db.TxnWrite(valData, sizeof(Float) * 2254);        
     }
 
     return L;

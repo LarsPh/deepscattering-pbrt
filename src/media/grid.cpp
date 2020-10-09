@@ -77,9 +77,9 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     Float tMin, tMax;
     if (!b.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
     // WZR: Optimized for pure medium region
-    //Ray nRayWorld = MediumToWorld
-    //    (Ray(ray.o, Normalize(ray.d), tMax * ray.d.Length()));
-    // rWorld.tMax = nRayWorld.tMax;
+    Ray nRayWorld = MediumToWorld
+        (Ray(ray.o, Normalize(ray.d), tMax * ray.d.Length()));
+    rWorld.tMax = nRayWorld.tMax;
 
     // Run delta-tracking iterations to sample a medium interaction
     Float t = tMin;

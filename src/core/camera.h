@@ -44,6 +44,9 @@
 #include "transform.h"
 #include "film.h"
 
+// WZR:
+#include "media/grid.h"
+
 namespace pbrt {
 
 // Camera Declarations
@@ -62,8 +65,8 @@ class Camera {
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;
     // WZR:
-    virtual void Preprocess(const Scene &scene);
-    virtual void Shuffle();
+    virtual void Shuffle(const Scene &, std::unique_ptr<Sampler>);
+    virtual void getDSInfo(GridDensityMedium *medium, Point3f *p, Vector3f *wo);
 
     // Camera Public Data
     AnimatedTransform CameraToWorld;

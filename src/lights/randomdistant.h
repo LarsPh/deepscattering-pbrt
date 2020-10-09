@@ -65,6 +65,7 @@ class RandomDistantLight : public Light {
                 Float *pdfDir) const;
     // WZR:
     void Shuffle();
+    void getDSInfo(Vector3f *);
 
   private:
     // RandomDistantLight Private Data

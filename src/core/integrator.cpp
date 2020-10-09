@@ -45,6 +45,7 @@
 
 // WZR
 #include "deepscattering/dslmdb.h"
+#include "deepscattering/recordstencils.h"
 #include "boost/math/distributions/students_t.hpp"
 
 namespace pbrt {
@@ -301,10 +302,31 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 int nn = n;                    
                 int count = 0;
 
-                // shuffle camera
-                camera->Shuffle();
+                Float valData[2252];
+                // shuffle camera                
+                camera->Shuffle(scene, sampler->Clone(seed));
                 // shuffle light source, only have one directional light
                 scene.lights[0]->Shuffle();
+                GridDensityMedium *medium;
+                Point3f p;
+                Vector3f wo;
+                ///////
+                camera->getDSInfo(medium, &p, &wo);
+                //////
+                Vector3f wlight;		
+                scene.lights[0]->getDSInfo(&wlight);
+                // record stencils
+                RecordStencils stencils(medium, p, wo, wlight, 0.5f);
+                // how the unit length of stencils 0.5 is computed:
+                // the max scaler for example clouds is 2, all the original
+                // clouds sizes are (2*250)x(2*250)x(2*250) -> 500x500x500
+                // (according to the "p0 [-1 -1 -1]" and "p1 [1 1 1]" attributes
+                // of the medium in pbrt files), results in size 1000x1000x1000
+                // for the largest scaled clouds. here we align it with the
+                // z-direction length (4 since the stencil is 2x2x4) of the K=10
+                // stencil, which gives the unit length(for K=10) of 1000/4=250.
+                // Then we have (1/2^9)*250 = 0.5 for K=1
+                stencils.record(valData);
 
                 do {                    
                     // Initialize _CameraSample_ for current sample

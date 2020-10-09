@@ -48,6 +48,9 @@ void RandomDistantLight::Shuffle() {
     RNG rng;
     w = UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
 }
+
+void RandomDistantLight::getDSInfo(Vector3f *wlight) { *wlight = w; }
+
 Spectrum RandomDistantLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                  Vector3f *wi, Float *pdf,
                                  VisibilityTester *vis) const {

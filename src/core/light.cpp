@@ -56,6 +56,8 @@ Light::Light(int flags, const Transform &LightToWorld,
 // WZR:
 void Light::Shuffle() {}
 
+void Light::getDSInfo(Vector3f *wlight) {}
+
 Light::~Light() {}
 
 bool VisibilityTester::Unoccluded(const Scene &scene) const {
