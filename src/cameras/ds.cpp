@@ -13,15 +13,15 @@
 namespace pbrt {
 
     // DSCamera Method Definitions
-void DSCamera::Shuffle(const Scene& scene, std::unique_ptr<Sampler> sampler) {
+void DSCamera::Shuffle(const Scene& scene, RNG &rng, MediumInteraction *fst_mi, MemoryArena *arena) {
+    Point3f center;
+    Float radius;
+    Bounds3f sceneBounds = scene.WorldBound();
+    sceneBounds.BoundingSphere(&center, &radius);
+
     while (true) {
         // Compute randomlized point x direction and position
-        Point3f center;
-        Float radius;
-        Bounds3f sceneBounds = scene.WorldBound();
-        sceneBounds.BoundingSphere(&center, &radius);
 
-        RNG rng;
         dir = UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
         Vector3f up(rng.UniformFloat(), rng.UniformFloat(), rng.UniformFloat());
 
@@ -34,31 +34,57 @@ void DSCamera::Shuffle(const Scene& scene, std::unique_ptr<Sampler> sampler) {
         Point3f bias3(bias2.x, bias2.y, 0.);
 
         Point3f pX = sphereToWorld(worldToSphere(center) + bias3) +
-                     Normalize(-dir) * (radius + FLT_EPSILON);
+                     Normalize(-dir) * (radius + 0.01);
+        // std::cout << std::endl << "px: " << pX << "\t";
+        // if ((pX - center).Length() < radius)
+        //    std::cout << "inside: " << (pX - center).Length() - radius;
+        // else
+        //    std::cout << "outside bias: " << (pX - center).Length() - radius << "\t";
+       
         // Free flight sample xi position
-        MemoryArena arena;
+        // MemoryArena arena;
         Ray ray(pX, dir, Infinity);
 
         SurfaceInteraction isect;
         // regenerate when generated ray doesn't intersect with scene
-        if (!scene.Intersect(ray, &isect)) continue;
-        assert(!ray.medium);
-        assert(!isect.bsdf);
-        ray = isect.SpawnRay(ray.d);
-        assert(ray.medium);
-        MediumInteraction mi;
-        ray.medium->Sample(ray, *sampler, arena, &mi);
-        if (!mi.IsValid()) continue;
+        if (!scene.Intersect(ray, &isect)) {
+            // std::cout << std::endl << "miss surface!" << std::endl;			
+            continue;
+        }
+        if (ray.medium != nullptr)
+            std::cout << std::endl << "Problematic!" << std::endl;
+        if (isect.bsdf != nullptr)
+            std::cout << std::endl << "Problematic!" << std::endl;
 
-        *newMedium = *ray.medium;
-        p = mi.p;
-        // store densities at p and angle
-        // TODO
+        // std::cout << "isect.p: " << isect.p << "\t" << "dis pX-isect.p: " << (pX - isect.p).Length() << "\t"; 
+
+        ray = isect.SpawnRay(ray.d);
+        // std::cout << "new ray o: " << ray.o << "\t"
+        //           << "new ray d: " << ray.d << "\t";
+        if (ray.medium == nullptr)
+            std::cout << std::endl << "Problematic!" << std::endl;
+        ray.medium->Sample_u(ray, rng, *arena, fst_mi);
+        // problem here
+        if (!fst_mi->IsValid()) {
+            // std::cout << std::endl << "miss medium!" << std::endl;
+            ++missCount;
+            continue;
+        }
+        ++hitCount;
+        newMedium = ray.medium;
+        p = fst_mi->p;
+        // std::cout << "mi.p: " << p << "\t"
+        //           << "dis isec.p-mi.p: " << (p - isect.p).Length() << "\t";       
         break;
     }
 }
-void DSCamera::getDSInfo(GridDensityMedium* medium, Point3f* p, Vector3f* wo) {
-    medium = (GridDensityMedium*)newMedium;
+void DSCamera::printInfo() {
+    std::cout << std::endl
+              << missCount << " of all " << hitCount + missCount
+              << " sample rays didn't hit the medium" << std::endl;
+}
+void DSCamera::getDSInfo(GridDensityMedium** medium, Point3f* p, Vector3f* wo) {
+    *medium = (GridDensityMedium *)newMedium;
     *p = DSCamera::p;
     *wo = dir;
 }
@@ -66,12 +92,12 @@ void DSCamera::getDSInfo(GridDensityMedium* medium, Point3f* p, Vector3f* wo) {
     Float DSCamera::GenerateRay(const CameraSample& sample,
         Ray* ray) const {
         ProfilePhase prof(Prof::GenerateCameraRay);
-        
+        // std::cout << "GenerateRay::p: " << p << "\t";
         *ray = Ray(p, dir, Infinity, Lerp(sample.time, shutterOpen, shutterClose));
-        assert(newMedium);
+        if (newMedium == nullptr)
+            std::cout << "Problematic!";
         // use updated medium after sampling in Shuffle instead of using medium of camera position
         ray->medium = newMedium;
-        *ray = CameraToWorld(*ray);
         return 1;
     }
 

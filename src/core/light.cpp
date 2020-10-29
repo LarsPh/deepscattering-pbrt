@@ -54,7 +54,7 @@ Light::Light(int flags, const Transform &LightToWorld,
     ++numLights;
 }
 // WZR:
-void Light::Shuffle() {}
+void Light::Shuffle(RNG& rng) {}
 
 void Light::getDSInfo(Vector3f *wlight) {}
 

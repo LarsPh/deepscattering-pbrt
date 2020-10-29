@@ -58,8 +58,12 @@ class PhaseFunction {
     virtual ~PhaseFunction();
     virtual Float p(const Vector3f &wo, const Vector3f &wi) const = 0;
     virtual Float p(const Vector3f &wo, const Vector3f &wi, Spectrum &f) const = 0;
+    virtual Float p_fst(const Vector3f &wo, const Vector3f &wi,
+                    Spectrum &f) const;
     virtual Float Sample_p(const Vector3f &wo, Vector3f *wi,
                            const Point2f &u) const = 0;
+    virtual Float Sample_p_fst(const Vector3f &wo, Vector3f *wi,
+                               const Point2f &u) const;
     virtual std::string ToString() const = 0;
 };
 
@@ -93,6 +97,11 @@ class Medium {
     virtual Spectrum Sample(const Ray &ray, Sampler &sampler,
                             MemoryArena &arena,
                             MediumInteraction *mi) const = 0;
+    virtual Spectrum Sample_u(const Ray &ray, RNG &rng, MemoryArena &arena,
+                              MediumInteraction *mi) const {
+        Error("Sample_u can only be called by GridMedium class");
+        return Spectrum();		
+    };
 };
 
 // HenyeyGreenstein Declarations
@@ -126,8 +135,11 @@ class CloudMie : public PhaseFunction {
     Float p(const Vector3f &wo, const Vector3f &wi) const { 
         Error("p(const Vector3f &wo, const Vector3f &wi) of a CloudMie instance gets called");
         return 0; };
+    Float p_fst(const Vector3f &wo, const Vector3f &wi, Spectrum &f) const;
     Float Sample_p(const Vector3f &wo, Vector3f *wi,
                    const Point2f &sample) const;
+    Float Sample_p_fst(const Vector3f &wo, Vector3f *wi,
+                       const Point2f &u) const;
     std::string ToString() const {
         return StringPrintf("[ Mie parameters: TODO ]");
     }
@@ -136,21 +148,30 @@ class CloudMie : public PhaseFunction {
 
   private:
     
+
+    static alglib::spline1dinterpolant CerpPDF;
+    static alglib::spline1dinterpolant CerpInv;
+    static alglib::spline1dinterpolant CerpFstPDF;
+    static alglib::spline1dinterpolant CerpFstInv;
     static alglib::spline1dinterpolant CerpR;
     static alglib::spline1dinterpolant CerpG;
     static alglib::spline1dinterpolant CerpB;
-    static alglib::spline1dinterpolant CerpPDF;
-    static alglib::spline1dinterpolant CerpInv;
+
+    static alglib::real_1d_array PDF;
+    static alglib::real_1d_array CDF;
+    static alglib::real_1d_array FstPDF;
+    static alglib::real_1d_array FstCDF;
+    static alglib::real_1d_array Theta;
+    static alglib::real_1d_array Test;
     static alglib::real_1d_array RPhase;
     static alglib::real_1d_array GPhase;
     static alglib::real_1d_array BPhase;
-    static alglib::real_1d_array PDF;
-    static alglib::real_1d_array CDF;
-    static alglib::real_1d_array Theta;
-    static alglib::real_1d_array Test;
+
 
     Float phaseMie(Float degree) const;
+    Float phaseMie_fst(Float degree) const;
     Float phaseMie(Float degree, Spectrum &f) const;
+    Float phaseMie_fst(Float degree, Spectrum &f) const;
 };
 
 // MediumInterface Declarations

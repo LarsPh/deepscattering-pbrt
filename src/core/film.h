@@ -53,7 +53,7 @@ struct FilmTilePixel {
     Spectrum contribSum = 0.f;
     Float filterWeightSum = 0.f;
     // WZR:
-    Spectrum varianceContribSum = 0.f;
+    Spectrum variance = 0.f;
 };
 
 // Film Declarations
@@ -63,7 +63,8 @@ class Film {
     Film(const Point2i &resolution, const Bounds2f &cropWindow,
          std::unique_ptr<Filter> filter, Float diagonal,
          const std::string &filename, Float scale,
-         Float maxSampleLuminance = Infinity, bool haveVariance = false);
+         Float maxSampleLuminance = Infinity, bool haveVariance = false,
+         std::string dbPath = "");
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
@@ -86,6 +87,7 @@ class Film {
     Bounds2i croppedPixelBounds;
     // WZR:
     bool haveVariance;
+    std::string dbPath;
 
   private:
     // Film Private Data
@@ -175,7 +177,28 @@ class FilmTile {
                 FilmTilePixel &pixel = GetPixel(Point2i(x, y));
                 pixel.contribSum += L * sampleWeight * filterWeight;
                 pixel.filterWeightSum += filterWeight;
-                pixel.varianceContribSum += L * L * sampleWeight * filterWeight;
+            }
+        }
+    }
+    // WZR:
+    void AddVariance(const Point2f &pFilm, Spectrum V) {
+        ProfilePhase _(Prof::AddFilmSample);
+        if (V.y() > maxSampleLuminance) V *= maxSampleLuminance / V.y();
+        // Compute sample's raster bounds
+        Point2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
+        Point2i p0 = (Point2i)Ceil(pFilmDiscrete - filterRadius);
+        Point2i p1 =
+            (Point2i)Floor(pFilmDiscrete + filterRadius) + Point2i(1, 1);
+        p0 = Max(p0, pixelBounds.pMin);
+        p1 = Min(p1, pixelBounds.pMax);
+
+        // Loop over filter support and add sample to pixel arrays
+
+        for (int y = p0.y; y < p1.y; ++y) {
+            for (int x = p0.x; x < p1.x; ++x) {
+                // Update pixel values 
+                FilmTilePixel &pixel = GetPixel(Point2i(x, y));
+                pixel.variance = V;
             }
         }
     }

@@ -65,8 +65,9 @@ class Camera {
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;
     // WZR:
-    virtual void Shuffle(const Scene &, std::unique_ptr<Sampler>);
-    virtual void getDSInfo(GridDensityMedium *medium, Point3f *p, Vector3f *wo);
+    virtual void Shuffle(const Scene &, RNG &, MediumInteraction *, MemoryArena *);
+    virtual void getDSInfo(GridDensityMedium **medium, Point3f *p, Vector3f *wo);
+    virtual void printInfo();
 
     // Camera Public Data
     AnimatedTransform CameraToWorld;

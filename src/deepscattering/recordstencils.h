@@ -23,8 +23,7 @@ class RecordStencils {
     GridDensityMedium* medium;
     int k;
     Float unit;
-    Transform stencilsCoordinate;
-    Point3f Stencils2World(Point3f p) { return stencilsCoordinate(p); }
+    Transform stencilsToMedium;
     // for logging
     Point3f location;
     Vector3f wLight;

@@ -90,6 +90,7 @@ TEST(CloudMie, Normalized) {
     Float t = Pi / 1800.;
     for (int i = 1; i < n; ++i) {
         sum += 0.5 * (mie.getPDFRawData(i - 1) * sin(t * (i - 1)) + mie.getPDFRawData(i) * sin(t * i)) * t;
+        std::cout << sum * 2 * Pi << std::endl;
     }
     sum *= 2 * Pi;
     // Phase function should integrate to 1.

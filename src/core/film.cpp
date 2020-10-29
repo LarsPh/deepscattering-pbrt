@@ -47,7 +47,7 @@ STAT_MEMORY_COUNTER("Memory/Film pixels", filmPixelMemory);
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
            std::unique_ptr<Filter> filt, Float diagonal,
            const std::string &filename, Float scale, Float maxSampleLuminance,
-           bool haveVariance)
+           bool haveVariance, std::string dbPath)
     : fullResolution(resolution),
       diagonal(diagonal * .001),
       filter(std::move(filt)),
@@ -55,7 +55,8 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
       scale(scale),
       maxSampleLuminance(maxSampleLuminance),
       haveVariance(haveVariance),
-      variance(0) {
+      variance(0),
+      dbPath(dbPath) {
     // Compute film image bounds
     croppedPixelBounds =
         Bounds2i(Point2i(std::ceil(fullResolution.x * cropWindow.pMin.x),
@@ -138,7 +139,7 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
         if (haveVariance) {
             Pixel &mergeVariancePixel = GetVariancePixel(pixel);
             Float varianceXyz[3];
-            tilePixel.varianceContribSum.ToXYZ(varianceXyz);
+            tilePixel.variance.ToXYZ(varianceXyz);
             for (int i = 0; i < 3; ++i)
                 mergeVariancePixel.xyz[i] += varianceXyz[i];
             mergeVariancePixel.filterWeightSum += tilePixel.filterWeightSum;
@@ -335,9 +336,10 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     Float diagonal = params.FindOneFloat("diagonal", 35.);
     Float maxSampleLuminance =
         params.FindOneFloat("maxsampleluminance", Infinity);
-    bool haveVariance = params.FindOneBool("haveVariance", false);
+    bool haveVariance = params.FindOneBool("variance", false);
+    std::string dbPath = params.FindOneString("dbpath", "");
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
-                    filename, scale, maxSampleLuminance, haveVariance);
+                    filename, scale, maxSampleLuminance, haveVariance, dbPath);
 }
 
 }  // namespace pbrt

@@ -24,13 +24,16 @@ namespace pbrt {
                                 const Medium* medium)
           : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium) {}
         Float GenerateRay(const CameraSample& sample, Ray*) const;
-        void Shuffle(const Scene&, std::unique_ptr<Sampler>);
-        void getDSInfo(GridDensityMedium* medium, Point3f* p, Vector3f* wo);
+        void Shuffle(const Scene&, RNG& rng, MediumInteraction *fst_mi, MemoryArena *arena);
+        void getDSInfo(GridDensityMedium** medium, Point3f* p, Vector3f* wo);
+        void printInfo();
 
      private:
         Point3f p;
         Vector3f dir;
-        Medium* newMedium;
+        const Medium* newMedium;
+        int missCount = 0;
+        int hitCount = 0;
     };
 
     DSCamera* CreateDSCamera(const ParamSet& params,

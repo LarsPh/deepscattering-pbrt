@@ -43,9 +43,8 @@ RandomDistantLight::RandomDistantLight(const Transform &LightToWorld, const Spec
     : Light((int)LightFlags::DeltaDirection, LightToWorld, MediumInterface()),
       L(L) {}
 
-void RandomDistantLight::Shuffle() {
+void RandomDistantLight::Shuffle(RNG &rng) {
     // WZR: randomlized direction
-    RNG rng;
     w = UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
 }
 

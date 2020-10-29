@@ -47,13 +47,25 @@
 #include "deepscattering/dslmdb.h"
 #include "deepscattering/recordstencils.h"
 #include "boost/math/distributions/students_t.hpp"
+#include <random>
 
 namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
+STAT_INT_DISTRIBUTION("Integrator/Adaptive samples distribution", distNSamples);
+
 
 // Integrator Method Definitions
 Integrator::~Integrator() {}
+
+//WZR:
+Spectrum SamplerIntegrator::Lo(const RayDifferential &r, const Scene &scene,
+                    Sampler &sampler, MemoryArena &arena,
+                               MediumInteraction *fst_mi, int depth) const {
+    std::cout << "Lo can only be called within VolpathIntegrator class."
+              << std::endl;
+    exit(1);
+};
 
 // Integrator Utility Functions
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
@@ -108,6 +120,30 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     Point2f uScattering = sampler.Get2D();
     return EstimateDirect(it, uScattering, *light, uLight,
                           scene, sampler, arena, handleMedia) / lightPdf;
+}
+
+Spectrum UniformSampleOneLight_fstbounce(const Interaction &it, const Scene &scene,
+                               MemoryArena &arena, Sampler &sampler,
+                               bool handleMedia,
+                               const Distribution1D *lightDistrib) {
+    ProfilePhase p(Prof::DirectLighting);
+    // Randomly choose a single light to sample, _light_
+    int nLights = int(scene.lights.size());
+    if (nLights == 0) return Spectrum(0.f);
+    int lightNum;
+    Float lightPdf;
+    if (lightDistrib) {
+        lightNum = lightDistrib->SampleDiscrete(sampler.Get1D(), &lightPdf);
+        if (lightPdf == 0) return Spectrum(0.f);
+    } else {
+        lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
+        lightPdf = Float(1) / nLights;
+    }
+    const std::shared_ptr<Light> &light = scene.lights[lightNum];
+    Point2f uLight = sampler.Get2D();
+    Point2f uScattering = sampler.Get2D();
+    return EstimateDirect_fstbounce(it, uScattering, *light, uLight, scene,
+                                    sampler, arena, handleMedia) / lightPdf;
 }
 
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
@@ -225,6 +261,125 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     return Ld;
 }
 
+Spectrum EstimateDirect_fstbounce(const Interaction &it,
+                                  const Point2f &uScattering,
+                                  const Light &light, const Point2f &uLight,
+                                  const Scene &scene, Sampler &sampler,
+                                  MemoryArena &arena, bool handleMedia,
+                                  bool specular) {
+    BxDFType bsdfFlags =
+        specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
+    Spectrum Ld(0.f);
+    // Sample light source with multiple importance sampling
+    Vector3f wi;
+    Float lightPdf = 0, scatteringPdf = 0;
+    VisibilityTester visibility;
+    Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
+    VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li
+            << ", wi: " << wi << ", pdf: " << lightPdf;
+    if (lightPdf > 0 && !Li.IsBlack()) {
+        // Compute BSDF or phase function's value for light sample
+        Spectrum f;
+        if (it.IsSurfaceInteraction()) {
+            // Evaluate BSDF for light sampling strategy
+            const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
+            f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
+                AbsDot(wi, isect.shading.n);
+            scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
+            VLOG(2) << "  surf f*dot :" << f
+                    << ", scatteringPdf: " << scatteringPdf;
+        } else {
+            // Evaluate phase function for light sampling strategy
+            const MediumInteraction &mi = (const MediumInteraction &)it;
+            // Mie
+            Float p = mi.phase->p_fst(mi.wo, wi, f);
+            f = Spectrum(p);
+            // Mie end
+            // HG
+            // Float p = mi.phase->p(mi.wo, wi);
+            // f = Spectrum(p);
+            // HG end
+            scatteringPdf = p;
+            VLOG(2) << "  medium p: " << p;
+        }
+        if (!f.IsBlack()) {
+            // Compute effect of visibility for light source sample
+            if (handleMedia) {
+                Li *= visibility.Tr(scene, sampler);
+                VLOG(2) << "  after Tr, Li: " << Li;
+            } else {
+                if (!visibility.Unoccluded(scene)) {
+                    VLOG(2) << "  shadow ray blocked";
+                    Li = Spectrum(0.f);
+                } else
+                    VLOG(2) << "  shadow ray unoccluded";
+            }
+
+            // Add light's contribution to reflected radiance
+            if (!Li.IsBlack()) {
+                if (IsDeltaLight(light.flags))
+                    Ld += f * Li / lightPdf;
+                else {
+                    Float weight =
+                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);
+                    Ld += f * Li * weight / lightPdf;
+                }
+            }
+        }
+    }
+
+    // Sample BSDF with multiple importance sampling
+    if (!IsDeltaLight(light.flags)) {
+        Spectrum f;
+        bool sampledSpecular = false;
+        if (it.IsSurfaceInteraction()) {
+            // Sample scattered direction for surface interactions
+            BxDFType sampledType;
+            const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
+            f = isect.bsdf->Sample_f(isect.wo, &wi, uScattering, &scatteringPdf,
+                                     bsdfFlags, &sampledType);
+            f *= AbsDot(wi, isect.shading.n);
+            sampledSpecular = (sampledType & BSDF_SPECULAR) != 0;
+        } else {
+            // Sample scattered direction for medium interactions
+            const MediumInteraction &mi = (const MediumInteraction &)it;
+            Float p = mi.phase->Sample_p(mi.wo, &wi, uScattering);
+            f = Spectrum(p);
+            scatteringPdf = p;
+        }
+        VLOG(2) << "  BSDF / phase sampling f: " << f
+                << ", scatteringPdf: " << scatteringPdf;
+        if (!f.IsBlack() && scatteringPdf > 0) {
+            // Account for light contributions along sampled direction _wi_
+            Float weight = 1;
+            if (!sampledSpecular) {
+                lightPdf = light.Pdf_Li(it, wi);
+                if (lightPdf == 0) return Ld;
+                weight = PowerHeuristic(1, scatteringPdf, 1, lightPdf);
+            }
+
+            // Find intersection and compute transmittance
+            SurfaceInteraction lightIsect;
+            Ray ray = it.SpawnRay(wi);
+            Spectrum Tr(1.f);
+            bool foundSurfaceInteraction =
+                handleMedia ? scene.IntersectTr(ray, sampler, &lightIsect, &Tr)
+                            : scene.Intersect(ray, &lightIsect);
+
+            // Add light contribution from material sampling
+            Spectrum Li(0.f);
+            if (foundSurfaceInteraction) {
+                if (lightIsect.primitive->GetAreaLight() == &light)
+                    Li = lightIsect.Le(-wi);
+            } else
+                Li = light.Le(ray);
+            if (!Li.IsBlack()) Ld += f * Li * Tr * weight / scatteringPdf;
+        }
+    }
+    return Ld;
+}
+
+
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     const Scene &scene) {
     if (scene.lights.empty()) return nullptr;
@@ -243,12 +398,26 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // WZR: Initialze static class members
     CloudMie::createCerp();
     
+    // Print bouding sphere radius
+    Point3f center;
+    Float radius;
+    Bounds3f sceneBounds = scene.WorldBound();
+    sceneBounds.BoundingSphere(&center, &radius);
+    // std::cout << "radius: " << radius << std::endl;
+    
     //DsLMDB::OpenEnv(
-        //"/home/LarsMPace/ds_db/db_001");
         //"D:/Computer "
         //"Science/UJiangnanGraduationProject/Contents/Advanced/DL&"
         //"Graphics/DeepScattering/houdini_projects/Cloud/deepscattering_db/db_1196");
-    // ends
+        
+        //"C:/Users/Administrator/Desktop/ds_db/db_1196"
+        
+        //"C:/Users/LarsMpace/Desktop/ds_db/db_1196");	
+    bool writeData = false;
+    if (camera->film->dbPath.length() != 0) writeData = true;
+
+    if (writeData) DsLMDB::OpenEnv(camera->film->dbPath.c_str());
+    
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
@@ -256,8 +425,13 @@ void SamplerIntegrator::Render(const Scene &scene) {
     const int tileSize = 16;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
+
+    long nT = nTiles.x * nTiles.y;
+    //WZR: Be careful not to overflow int expression
+    Float *valData = new Float[nT * 256ULL * 2252];
+    int *tileSamplesNs = new int[nT];
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
-    {
+    {        
         ParallelFor2D([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 
@@ -267,6 +441,12 @@ void SamplerIntegrator::Render(const Scene &scene) {
             // Get sampler instance for tile
             int seed = tile.y * nTiles.x + tile.x;
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
+            // create rng
+            RNG rng;
+            auto rand = std::bind(std::uniform_real_distribution<double>{0, 100},
+                                  std::default_random_engine{
+                                      static_cast<long unsigned int>(time(0))});
+            rng.SetSequence(seed + rand());
 
             // Compute sample bounds for tile
             int x0 = sampleBounds.pMin.x + tile.x * tileSize;
@@ -279,7 +459,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
-
+            int tileSamplesN = 0;
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
                 {
@@ -293,7 +473,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 // debugging.
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
-                // declare a vector of radiances inside a pixel
+                // declare varibles for adaptive sampling
                 Spectrum sum;
                 Spectrum sqSum;
                 Float d = 0.02;
@@ -301,32 +481,37 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 int n = int(log(alpha) / log(1. - d)) + 1;
                 int nn = n;                    
                 int count = 0;
+                              
+                // shuffle camera     
+                MemoryArena arena;
+                MediumInteraction fst_mi;
+                if (writeData) {
+                    camera->Shuffle(scene, rng, &fst_mi, &arena);
+                    // shuffle light source, only have one directional light
+                    scene.lights[0]->Shuffle(rng);
+                    GridDensityMedium *medium;
+                    Point3f p;
+                    Vector3f wo;
+                    camera->getDSInfo(&medium, &p, &wo);
+                    // std::cout << "p: " << p << "\t" << "wo: " << wo << "\t";
+                    Vector3f wlight;
+                    scene.lights[0]->getDSInfo(&wlight);
+                    // std::cout << "wl: " << wlight << "\t";
+                    // record stencils
+                    // WZR: for recording
 
-                Float valData[2252];
-                // shuffle camera                
-                camera->Shuffle(scene, sampler->Clone(seed));
-                // shuffle light source, only have one directional light
-                scene.lights[0]->Shuffle();
-                GridDensityMedium *medium;
-                Point3f p;
-                Vector3f wo;
-                ///////
-                camera->getDSInfo(medium, &p, &wo);
-                //////
-                Vector3f wlight;		
-                scene.lights[0]->getDSInfo(&wlight);
-                // record stencils
-                RecordStencils stencils(medium, p, wo, wlight, 0.5f);
-                // how the unit length of stencils 0.5 is computed:
-                // the max scaler for example clouds is 2, all the original
-                // clouds sizes are (2*250)x(2*250)x(2*250) -> 500x500x500
-                // (according to the "p0 [-1 -1 -1]" and "p1 [1 1 1]" attributes
-                // of the medium in pbrt files), results in size 1000x1000x1000
-                // for the largest scaled clouds. here we align it with the
-                // z-direction length (4 since the stencil is 2x2x4) of the K=10
-                // stencil, which gives the unit length(for K=10) of 1000/4=250.
-                // Then we have (1/2^9)*250 = 0.5 for K=1
-                stencils.record(valData);
+                    RecordStencils stencils(medium, p, wo, wlight, 0.25f);
+                    // how the unit length of stencils 0.5 is computed:
+                    // all the clouds sizes are (2*250)x(2*250)x(2*250) ->
+                    // 500x500x500 (according to the "p0 [-1 -1 -1]" and "p1 [1
+                    // 1 1]" attributes of the medium in pbrt files) here we
+                    // align it with the z-direction length (4 since the stencil
+                    // is 2x2x4) of the K=10 stencil, which gives the unit
+                    // length(for K=10) of 500/4=125. Then we have (1/2^9)*125 =
+                    // 0.25 for K=1 WZR: for recording
+                    stencils.record(
+                        &valData[seed * 256ULL * 2252 + tileSamplesN * 2252]);
+                }
 
                 do {                    
                     // Initialize _CameraSample_ for current sample
@@ -343,7 +528,14 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
+
+                    // WZR: for recording                    
+                    if (rayWeight > 0) {
+                        if (writeData)
+                            L = Lo(ray, scene, *tileSampler, arena, &fst_mi);
+                        else
+                            L = Li(ray, scene, *tileSampler, arena);
+                    }
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -379,7 +571,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
                     
                     if (count == nn) {
-                        //use relative variance for better convergenced margian
+                        //use relative variance for better convergenced margin
                         //Float lenA =
                         //    sqrt(sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / count;
                         
@@ -391,17 +583,16 @@ void SamplerIntegrator::Render(const Scene &scene) {
                                 rSqrSum[i] = 0;
                             else
                                 rSqrSum[i] = 1. / (sum[i] * sum[i]);
-                        Spectrum l = count * (count * sqSum * rSqrSum - 1.);
-                        boost::math::students_t dist(count - 1);
+                        // Spectrum l = count * (count * sqSum * rSqrSum - 1.);
+                        Spectrum l = count * (count * sqSum * rSqrSum - 1.) / (count - 1.);
+                        boost::math::students_t dist(count - 1.);
                         Float t = boost::math::quantile(complement(dist, alpha / 2));
                         
-                        Float r =  count * (count - 1) * d * d / (t * t);
+                        // Float r =  count * (count - 1) * d * d / (t * t);
+                        Float r = count * d * d / (t * t);
                         // compare l with the confidance interval and count > 5,
                         if (l[0] <= r && l[1] <= r && l[2] <= r) {
-                            // if inside, add this sample to film, report count
-                            // and break
-
-                            
+                            // if inside, add this sample to film, report count and break                            
                             // if (count > 149) {
                             //    std::cout << count << std::endl;                            
 
@@ -415,18 +606,42 @@ void SamplerIntegrator::Render(const Scene &scene) {
                         }
                     }
 
-                    // Free _MemoryArena_ memory from computing image sample
-                    // value
-                    arena.Reset();                   
+                    // Free _MemoryArena_ memory from computing image sample value
+                    arena.Reset();                        
                 } while (tileSampler->StartNextSample());
-                // filmTile->L
+                // record L
+                // don't need to filter since we sample on same location for a pixel
+                if (writeData)
+                    valData[seed * 256ULL * 2252 + tileSamplesN * 2252 + 2251] =
+                        sum[0] / count;      
+                
+                // std::cout << "L: " << valData[2251] << std::endl;                 
+                // WZR: record multiple-scattered radiance
+                if (sum[0] / count != 0)
+                    DsLMDB::tmpCount1();
+                else
+                    DsLMDB::tmpCount2();   
+                ++tileSamplesN;
+                ReportValue(distNSamples, count);
             }
+            if (writeData) tileSamplesNs[seed] = tileSamplesN;
+
             LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
         }, nTiles);
+        // WZR:
+        // Write records in all tiles to database
+        if (writeData) {
+            DsLMDB db;
+            db.TxnWrite(valData, nT, tileSamplesNs, sizeof(Float) * 2252);
+        }
+        delete[] tileSamplesNs;
+        delete[] valData;
+
+        camera->printInfo();
         reporter.Done();
     }
     LOG(INFO) << "Rendering finished";
@@ -434,10 +649,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // Save final image after rendering
     camera->film->WriteImage();
     // WZR:
-    if (camera->film->haveVariance) {
-        camera->film->WriteVarianceImage();
-        camera->film->PrintVariance();
-    }
+    // if (camera->film->haveVariance) {
+       // camera->film->WriteVarianceImage();
+       // camera->film->PrintVariance();
+    //}
     DsLMDB::tmpPrint();
 }
 

@@ -64,7 +64,7 @@ class RandomDistantLight : public Light {
     void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                 Float *pdfDir) const;
     // WZR:
-    void Shuffle();
+    void Shuffle(RNG &);
     void getDSInfo(Vector3f *);
 
   private:

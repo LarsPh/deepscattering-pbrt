@@ -67,11 +67,6 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
     Transform MediumToWorld = Inverse(WorldToMedium);
-    // WZR: seems wrong :(
-    // Ray rMedium = WorldToMedium(rWorld);
-    // Ray ray =
-    //     Ray(rMedium.o, Normalize(rMedium.d), rMedium.tMax *
-    //     rMedium.d.Length());
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
     const Bounds3f b(Point3f(0, 0, 0), Point3f(1, 1, 1));
     Float tMin, tMax;
@@ -87,12 +82,41 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
         t -= std::log(1 - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tMax) break;
         Float gridDensity = Density(ray(t));
-        // if (gridDensity > 0) DsLMDB::tmpCount();
         if (gridDensity * invMaxDensity > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
-            // WZR:
-            // PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
             ReportValue(distRho_t, gridDensity * sigma_t);
+            PhaseFunction *phase = ARENA_ALLOC(arena, CloudMie);
+            *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
+                                    phase);
+            return sigma_s / sigma_t;
+        }
+    }
+    return Spectrum(1.f);
+}
+
+Spectrum GridDensityMedium::Sample_u(const Ray &rWorld, RNG &rng, MemoryArena &arena,
+    MediumInteraction* mi) const {
+    Ray ray = WorldToMedium(
+        Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
+    Transform MediumToWorld = Inverse(WorldToMedium);
+    // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
+    const Bounds3f b(Point3f(0, 0, 0), Point3f(1, 1, 1));
+    Float tMin, tMax;
+    if (!b.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
+    // WZR: Optimized for pure medium region
+    Ray nRayWorld =
+        MediumToWorld(Ray(ray.o, Normalize(ray.d), tMax * ray.d.Length()));
+    rWorld.tMax = nRayWorld.tMax;
+
+    // Run delta-tracking iterations to sample a medium interaction
+    Float t = tMin;
+    while (true) {
+        t -= std::log(1 - rng.UniformFloat()) * invMaxDensity / sigma_t;
+        if (t >= tMax) break;
+        Float gridDensity = Density(ray(t));
+        if (gridDensity * invMaxDensity > rng.UniformFloat()) {
+            // Populate _mi_ with medium interaction information and return
+            // ReportValue(distRho_t, gridDensity * sigma_t);
             PhaseFunction *phase = ARENA_ALLOC(arena, CloudMie);
             *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
                                     phase);

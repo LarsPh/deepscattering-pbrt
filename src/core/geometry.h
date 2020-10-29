@@ -873,7 +873,9 @@ class Ray {
     Ray(const Point3f &o, const Vector3f &d, Float tMax = Infinity,
         Float time = 0.f, const Medium *medium = nullptr)
         : o(o), d(d), tMax(tMax), time(time), medium(medium) {}
-    Point3f operator()(Float t) const { return o + d * t; }
+    Point3f operator()(Float t) const {        
+        return o + d * t;
+    }
     bool HasNaNs() const { return (o.HasNaNs() || d.HasNaNs() || isNaN(tMax)); }
     friend std::ostream &operator<<(std::ostream &os, const Ray &r) {
         os << "[o=" << r.o << ", d=" << r.d << ", tMax=" << r.tMax

@@ -18,16 +18,17 @@ namespace pbrt {
 class DsLMDB {
   public:
     static void OpenEnv(const char *path);
-    void TxnWrite(void *valData, size_t valSize);
+    void TxnWrite(Float *valData, long nT, int *tileSamplesNs, size_t valSize);
 
     static void tmpCount1() { ++tmpCounter1; }
-    static void tmpCount2() { ++tmpCounter1; }
+    static void tmpCount2() { ++tmpCounter2; }
     static void tmpPrint() {
-        std::cout << "number of non-zero records:" << tmpCounter1 << std::endl;
-        std::cout << "number of zero records:" << tmpCounter2 << std::endl;
+        std::cout << "\nnumber of non-zero records:" << tmpCounter1;
+        std::cout << "\nnumber of zero records:" << tmpCounter2;
     }
 
   private:
+    static std::string path;
     static MDB_env *env;
     static MDB_dbi dbi;
 
@@ -37,6 +38,7 @@ class DsLMDB {
     static std::unordered_set<int>::iterator it;
     static std::unordered_set<int> keys;
     static void createKeys(int n);
+    static long keyCounter;
 };
 }  // namespace pbrt
 

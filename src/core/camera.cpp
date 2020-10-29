@@ -111,6 +111,7 @@ Spectrum Camera::Sample_Wi(const Interaction &ref, const Point2f &u,
     LOG(FATAL) << "Camera::Sample_Wi() is not implemented!";
     return Spectrum(0.f);
 }
-void Camera::Shuffle(const Scene &scene, std::unique_ptr<Sampler> sampler) {}
-void Camera::getDSInfo(GridDensityMedium *medium, Point3f *p, Vector3f *wo) {}
+void Camera::Shuffle(const Scene &scene, RNG &rng, MediumInteraction *fst_mi, MemoryArena *arena) {}
+void Camera::getDSInfo(GridDensityMedium **medium, Point3f *p, Vector3f *wo) {}
+void Camera::printInfo() {}
 }  // namespace pbrt

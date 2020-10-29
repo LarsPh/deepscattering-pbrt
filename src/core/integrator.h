@@ -65,12 +65,22 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                MemoryArena &arena, Sampler &sampler,
                                bool handleMedia = false,
                                const Distribution1D *lightDistrib = nullptr);
+Spectrum UniformSampleOneLight_fstbounce(const Interaction &it, const Scene &scene,
+                               MemoryArena &arena, Sampler &sampler,
+                               bool handleMedia = false,
+                               const Distribution1D *lightDistrib = nullptr);
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
                         const Light &light, const Point2f &uLight,
                         const Scene &scene, Sampler &sampler,
                         MemoryArena &arena, bool handleMedia = false,
                         bool specular = false);
-std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
+Spectrum EstimateDirect_fstbounce(const Interaction &it,
+                                  const Point2f &uScattering,
+                                  const Light &light, const Point2f &uLight,
+                                  const Scene &scene, Sampler &sampler,
+                                  MemoryArena &arena, bool handleMedia,
+                                  bool specular = false);
+    std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     const Scene &scene);
 
 // SamplerIntegrator Declarations
@@ -86,6 +96,9 @@ class SamplerIntegrator : public Integrator {
     virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
                         Sampler &sampler, MemoryArena &arena,
                         int depth = 0) const = 0;
+    virtual Spectrum Lo(const RayDifferential &r, const Scene &scene,
+                        Sampler &sampler, MemoryArena &arena,
+                        MediumInteraction *fst_mi, int depth = 0) const;
     Spectrum SpecularReflect(const RayDifferential &ray,
                              const SurfaceInteraction &isect,
                              const Scene &scene, Sampler &sampler,

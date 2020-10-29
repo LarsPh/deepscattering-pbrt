@@ -77,7 +77,7 @@ class GridDensityMedium : public Medium {
         // std::cout << nonzeroVexels << std::endl;
         invMaxDensity = 1 / maxDensity;
         // 2 for the forward peak of Mie phase funtion
-        Float f = 1. /  (densitySum / nonzeroVexels) * 0.43;
+        Float f = 1. /  (densitySum / nonzeroVexels) * 0.5;
         this->sigma_a *= f;
         this->sigma_s *= f;
         sigma_t = (sigma_a + sigma_s)[0];
@@ -98,6 +98,8 @@ class GridDensityMedium : public Medium {
     }
     Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
                     MediumInteraction *mi) const;
+    Spectrum Sample_u(const Ray &rWorld, RNG &rng, MemoryArena &arena,
+                      MediumInteraction *mi) const;
     Spectrum Tr(const Ray &ray, Sampler &sampler) const;
     // WZR: for calling Density outside Tr
     Point3f World2Medium(Point3f p) { return WorldToMedium(p); }
@@ -105,13 +107,13 @@ class GridDensityMedium : public Medium {
 
     // WZR: make invMaxDensity public for recording normalized data 
     Float invMaxDensity;
+    const Transform WorldToMedium;
 
   private:
     // GridDensityMedium Private Data
     Spectrum sigma_a, sigma_s;
     const Float g;
-    const int nx, ny, nz;
-    const Transform WorldToMedium;
+    const int nx, ny, nz;    
     std::unique_ptr<Float[]> density;
     Float sigma_t;
 };
