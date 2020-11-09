@@ -740,6 +740,11 @@ std::shared_ptr<Medium> MakeMedium(const std::string &name,
         int nz = paramSet.FindOneInt("nz", 1);
         Point3f p0 = paramSet.FindOnePoint3f("p0", Point3f(0.f, 0.f, 0.f));
         Point3f p1 = paramSet.FindOnePoint3f("p1", Point3f(1.f, 1.f, 1.f));
+        std::string phase_type = paramSet.FindOneString("phase_type", "mie_fst");
+        if (phase_type != "mie" && phase_type != "hg" && phase_type != "mie_fst") {
+            Error("Unkown type of phase function");
+            return NULL;
+        }
         if (nitems != nx * ny * nz) {
             Error(
                 "GridDensityMedium has %d density values; expected nx*ny*nz = "
@@ -750,7 +755,7 @@ std::shared_ptr<Medium> MakeMedium(const std::string &name,
         Transform data2Medium = Translate(Vector3f(p0)) *
                                 Scale(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
         m = new GridDensityMedium(sig_a, sig_s, g, nx, ny, nz,
-                                  medium2world * data2Medium, data);
+                                  medium2world * data2Medium, data, phase_type);
     } else
         Warning("Medium \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();

@@ -55,6 +55,7 @@ typedef std::unordered_map<int, Float> unoMap;
 class PhaseFunction {
   public:
     // PhaseFunction Interface
+    PhaseFunction(std::string type) : type(type) {};
     virtual ~PhaseFunction();
     virtual Float p(const Vector3f &wo, const Vector3f &wi) const = 0;
     virtual Float p(const Vector3f &wo, const Vector3f &wi, Spectrum &f) const = 0;
@@ -65,6 +66,7 @@ class PhaseFunction {
     virtual Float Sample_p_fst(const Vector3f &wo, Vector3f *wi,
                                const Point2f &u) const;
     virtual std::string ToString() const = 0;
+    std::string type;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const PhaseFunction &p) {
@@ -108,7 +110,7 @@ class Medium {
 class HenyeyGreenstein : public PhaseFunction {
   public:
     // HenyeyGreenstein Public Methods
-    HenyeyGreenstein(Float g) : g(g) {}
+    HenyeyGreenstein(Float g, std::string type="hg") : PhaseFunction(type), g(g) {}
     Float p(const Vector3f &wo, const Vector3f &wi) const;
     Float p(const Vector3f &wo, const Vector3f &wi, Spectrum &f) const {
         Error(
@@ -131,6 +133,7 @@ class HenyeyGreenstein : public PhaseFunction {
 class CloudMie : public PhaseFunction {
   public:
     // CloudMie Public Methods
+    CloudMie(std::string type="mie_fst") : PhaseFunction(type) {}
     Float p(const Vector3f &wo, const Vector3f &wi, Spectrum &f) const;
     Float p(const Vector3f &wo, const Vector3f &wi) const { 
         Error("p(const Vector3f &wo, const Vector3f &wi) of a CloudMie instance gets called");

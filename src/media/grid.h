@@ -53,7 +53,7 @@ class GridDensityMedium : public Medium {
     // GridDensityMedium Public Methods
     GridDensityMedium(const Spectrum &sigma_a, const Spectrum &sigma_s, Float g,
                       int nx, int ny, int nz, const Transform &mediumToWorld,
-                      const Float *d)
+                      const Float *d, std::string phase_type)
         : sigma_a(sigma_a),
           sigma_s(sigma_s),
           g(g),
@@ -61,33 +61,39 @@ class GridDensityMedium : public Medium {
           ny(ny),
           nz(nz),
           WorldToMedium(Inverse(mediumToWorld)),
-          density(new Float[nx * ny * nz]) {
+          density(new Float[nx * ny * nz]),
+          phase_type(phase_type) {
         densityBytes += nx * ny * nz * sizeof(Float);
         memcpy((Float *)density.get(), d, sizeof(Float) * nx * ny * nz);
         // Precompute values for Monte Carlo sampling of _GridDensityMedium_
         Float maxDensity = 0;
         Float densitySum = 0;
         // WZR: set average rho_t to correct value
-        int nonzeroVexels = 0;
-        for (int i = 0; i < nx * ny * nz; ++i) {
+        long nonzeroVexels = 0;
+        for (long i = 0; i < nx * ny * nz; ++i) {
             maxDensity = std::max(maxDensity, density[i]);
             densitySum += density[i];
             if (density[i] != 0) ++nonzeroVexels;
         }
-        // std::cout << nonzeroVexels << std::endl;
+        //// std::cout << nonzeroVexels << std::endl;
         invMaxDensity = 1 / maxDensity;
-        // 2 for the forward peak of Mie phase funtion
-        Float f = 1. /  (densitySum / nonzeroVexels) * 0.5;
+        // 0.6 for the forward peak of Mie phase funtion
+        Float f = 1. / (densitySum / nonzeroVexels); 
+        if (phase_type != "hg")
+            f *= 0.6;
         this->sigma_a *= f;
         this->sigma_s *= f;
-        sigma_t = (sigma_a + sigma_s)[0];
-        if (Spectrum(sigma_t) != sigma_a + sigma_s)
+        sigma_t = (this->sigma_a + this->sigma_s)[0];
+        if (Spectrum(sigma_t) != this->sigma_a + this->sigma_s)
             Error(
                 "GridDensityMedium requires a spectrally uniform attenuation "
                 "coefficient!");
-        for (int i = 0; i < nx * ny * nz; ++i)
-            maxDensity = std::max(maxDensity, density[i]);
+        //for (int i = 0; i < nx * ny * nz; ++i)
+        //    maxDensity = std::max(maxDensity, density[i]);
         invMaxDensity = 1 / maxDensity;
+        if (phase_type != "hg")
+            // WZR: Initialze static class members
+            CloudMie::createCerp();
     }
 
     Float Density(const Point3f &p) const;
@@ -104,10 +110,12 @@ class GridDensityMedium : public Medium {
     // WZR: for calling Density outside Tr
     Point3f World2Medium(Point3f p) { return WorldToMedium(p); }
     Point3f Medium2World(Point3f p) { return Inverse(WorldToMedium)(p); }
+    Float getSigma_t() { return sigma_t; }
 
     // WZR: make invMaxDensity public for recording normalized data 
     Float invMaxDensity;
     const Transform WorldToMedium;
+    const std::string phase_type; 
 
   private:
     // GridDensityMedium Private Data

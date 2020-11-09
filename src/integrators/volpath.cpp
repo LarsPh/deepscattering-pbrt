@@ -97,17 +97,16 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 lightDistribution->Lookup(mi.p);
 
             // WZR: ignore direct light radiance
-            if (bounces != 0)
-                L += beta * UniformSampleOneLight(mi, scene, arena, sampler,
-                                                  true, lightDistrib);
-
+            if (bounces == 0 && mi.phase->type == "mie_fst")
+                L += beta * UniformSampleOneLight_fstbounce(mi, scene, arena, sampler,
+                                                 true, lightDistrib);
             else
-                L += beta * UniformSampleOneLight_fstbounce(
-                                mi, scene, arena, sampler, true, lightDistrib);          
+                L += beta * UniformSampleOneLight(            
+                    mi, scene, arena, sampler, true, lightDistrib);          
        
 
             Vector3f wo = -ray.d, wi;
-            if (bounces == 0)
+            if (bounces == 0 && mi.phase->type == "mie_fst")
                 mi.phase->Sample_p_fst(wo, &wi, sampler.Get2D());
             else
                 mi.phase->Sample_p(wo, &wi, sampler.Get2D());
@@ -206,7 +205,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         }
     }
     ReportValue(pathLength, bounces);
-             
+    // if (L.MaxComponentValue() >= 10) 
+    //     std::cout << "debug";
     return L;
 }
 
@@ -263,7 +263,7 @@ Spectrum VolPathIntegrator::Lo(const RayDifferential &r, const Scene &scene,
                                                   true, lightDistrib);
 
             Vector3f wo = -ray.d, wi;
-            if (bounces == 0)
+            if (bounces == 0 && mi.phase->type == "mie_fst")
                 mi.phase->Sample_p_fst(wo, &wi, sampler.Get2D());
             else
                 mi.phase->Sample_p(wo, &wi, sampler.Get2D());

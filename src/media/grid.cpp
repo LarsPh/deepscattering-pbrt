@@ -81,11 +81,15 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     while (true) {
         t -= std::log(1 - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tMax) break;
-        Float gridDensity = Density(ray(t));
-        if (gridDensity * invMaxDensity > sampler.Get1D()) {
+        Float gridDensity = Density(ray(t)) * invMaxDensity;
+        if (gridDensity > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
             ReportValue(distRho_t, gridDensity * sigma_t);
-            PhaseFunction *phase = ARENA_ALLOC(arena, CloudMie);
+            PhaseFunction *phase;
+            if (phase_type != "hg")
+                phase = ARENA_ALLOC(arena, CloudMie(phase_type));
+            else
+                phase = ARENA_ALLOC(arena, HenyeyGreenstein(g, phase_type));
             *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
                                     phase);
             return sigma_s / sigma_t;
@@ -117,7 +121,11 @@ Spectrum GridDensityMedium::Sample_u(const Ray &rWorld, RNG &rng, MemoryArena &a
         if (gridDensity * invMaxDensity > rng.UniformFloat()) {
             // Populate _mi_ with medium interaction information and return
             // ReportValue(distRho_t, gridDensity * sigma_t);
-            PhaseFunction *phase = ARENA_ALLOC(arena, CloudMie);
+            PhaseFunction *phase;
+            if (phase_type != "hg")
+                phase = ARENA_ALLOC(arena, CloudMie(phase_type));
+            else
+                phase = ARENA_ALLOC(arena, HenyeyGreenstein(g, phase_type));
             *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
                                     phase);
             return sigma_s / sigma_t;

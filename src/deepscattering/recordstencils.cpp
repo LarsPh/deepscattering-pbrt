@@ -14,7 +14,8 @@ RecordStencils::RecordStencils(GridDensityMedium* m, Point3f p, Vector3f wo,
     Transform stencilsToWorld = Transform(matrix);
     stencilsToMedium = medium->WorldToMedium * stencilsToWorld;
 }
-void RecordStencils::record(Float* data) {    
+void RecordStencils::record(Float* data) {
+        Float sigma_t = medium->getSigma_t();
         Point3f p;
         for (int K = 0; K < k; K++) {
             Float unitK = unit * pow(2, K);
@@ -31,8 +32,16 @@ void RecordStencils::record(Float* data) {
                         p = a + Vector3f(i * d, j * d, m * d);
                         // Point3f pMedium = medium->World2Medium(Stencils2World(p));
                         Point3f pMedium = stencilsToMedium(p);
-                        Float density = medium->Density(pMedium); //*medium->invMaxDensity;
 
+                        // record density
+                        data[K * 225 + 5 * 5 * m + 5 * j + i] = medium->Density(pMedium) * sigma_t;
+
+                        // Debug 
+                        if (K == 9) {
+                            std::cout << medium->Medium2World(pMedium) << "\n";
+                            if ((K * 225 + 5 * 5 * m + 5 * j + i) % 25 == 24)
+                                std::cout << std::endl;
+                        }
                         /*if (i < 3 && j < 3 && m < 3)
                             LOG(INFO)
                                 << "WZR: wLight " << wLight << "wView " << wView
@@ -42,8 +51,6 @@ void RecordStencils::record(Float* data) {
                                 << p << " (world coordinate) "
                                 << Stencils2World(p) << " density " << density;
                         */
-                        //record density
-                        data[K*225+5*5*m+5*j+i] = density;
                     }
             // Vector3f delta = Abs(p - b);
             // if (!(delta.x < 1e-3 && delta.y < 1e-3 && delta.z < 1e-3))

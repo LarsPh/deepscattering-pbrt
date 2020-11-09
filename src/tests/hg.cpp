@@ -80,9 +80,24 @@ TEST(HenyeyGreenstein, Normalized) {
     }
 }
 
-TEST(CloudMie, Normalized) {
+TEST(CloudMie, SamplingMatch) {
     RNG rng;
-    
+    CloudMie::createCerp();
+    CloudMie mie;
+    for (int i = 0; i < 100; ++i) {
+        Vector3f wo =
+            UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
+        Vector3f wi;
+        Point2f u{rng.UniformFloat(), rng.UniformFloat()};
+        Float p0 = mie.Sample_p(wo, &wi, u);
+        Spectrum f;        
+        // Phase function is normalized, and the sampling method should be
+        // exact.
+        EXPECT_NEAR(p0, mie.p(wo, wi, f), 1e-3f);
+    }
+}
+TEST(CloudMie, Normalized) {
+    RNG rng;  
     CloudMie::createCerp();
     CloudMie mie;
     Float sum = 0;
@@ -94,6 +109,42 @@ TEST(CloudMie, Normalized) {
     }
     sum *= 2 * Pi;
     // Phase function should integrate to 1.
-    EXPECT_NEAR(sum, 2, 1e-3f);
+    EXPECT_NEAR(sum, 1, 1e-3f);
 
+}
+
+TEST(CloudMie, g) {
+    CloudMie::createCerp();
+    CloudMie mie;
+    Float sum = 0;
+    int n = 1801;
+    Float t = Pi / 1800.;
+    for (int i = 1; i < n; ++i) {
+        sum += 0.5 *
+               (mie.getPDFRawData(i - 1) * sin(t * (i - 1)) * cos(t * (i - 1)) +
+                mie.getPDFRawData(i) * sin(t * i) * cos(t * i)) *
+               t;
+        // std::cout << sum * 2 * Pi << std::endl;
+    }
+    sum *= 2 * Pi;
+    // Phase function should integrate to 1.
+    EXPECT_NEAR(sum, 0.831, 1e-3f);
+}
+
+TEST(CloudMie, chopped) {
+    CloudMie::createCerp();
+    CloudMie mie;
+    Float sum = 0;
+    int n = 81;
+    Float t = Pi / 1800.;
+    for (int i = 1; i < n; ++i) {
+        sum += 0.5 *
+               (mie.getPDFRawData(i - 1) * sin(t * (i - 1)) +
+                mie.getPDFRawData(i) * sin(t * i)) *
+               t;
+        // std::cout << sum * 2 * Pi << std::endl;
+    }
+    sum *= 2 * Pi;
+    // Phase function should integrate to 1.
+    EXPECT_NEAR(sum, 0.4931, 1e-3f);
 }

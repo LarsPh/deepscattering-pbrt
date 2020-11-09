@@ -173,14 +173,14 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         } else {
             // Evaluate phase function for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
-            //Mie
-            Float p = mi.phase->p(mi.wo, wi, f);
-            f = Spectrum(p);
-            //Mie end
-            //HG
-            //Float p = mi.phase->p(mi.wo, wi);
-            //f = Spectrum(p);
-            //HG end
+            //WZR:
+            Float p;
+            if (mi.phase->type != "hg")
+                p = mi.phase->p(mi.wo, wi, f);
+            else {
+                p = mi.phase->p(mi.wo, wi);
+                f = Spectrum(p);
+            }
             scatteringPdf = p;
             VLOG(2) << "  medium p: " << p;
         }
@@ -396,7 +396,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // Render image tiles in parallel
 
     // WZR: Initialze static class members
-    CloudMie::createCerp();
+    // CloudMie::createCerp();
     
     // Print bouding sphere radius
     Point3f center;
@@ -422,14 +422,18 @@ void SamplerIntegrator::Render(const Scene &scene) {
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
     Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int tileSize = 16;
+    const int tileSize = 2;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
 
     long nT = nTiles.x * nTiles.y;
     //WZR: Be careful not to overflow int expression
-    Float *valData = new Float[nT * 256ULL * 2252];
-    int *tileSamplesNs = new int[nT];
+    Float *valData;
+    int *tileSamplesNs;
+    if (writeData) {
+        valData = new Float[nT * 256ULL * 2252];
+        tileSamplesNs = new int[nT];
+    }
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {        
         ParallelFor2D([&](Point2i tile) {
@@ -443,11 +447,13 @@ void SamplerIntegrator::Render(const Scene &scene) {
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
             // create rng
             RNG rng;
-            auto rand = std::bind(std::uniform_real_distribution<double>{0, 100},
-                                  std::default_random_engine{
-                                      static_cast<long unsigned int>(time(0))});
-            rng.SetSequence(seed + rand());
-
+            if (writeData) {
+                auto rand =
+                    std::bind(std::uniform_real_distribution<double>{0, 100},
+                              std::default_random_engine{
+                                  static_cast<long unsigned int>(time(0))});
+                rng.SetSequence(seed + rand());
+            }
             // Compute sample bounds for tile
             int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
@@ -500,15 +506,15 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // record stencils
                     // WZR: for recording
 
-                    RecordStencils stencils(medium, p, wo, wlight, 0.25f);
+                    RecordStencils stencils(medium, p, wo, wlight, 0.5f / 2);
                     // how the unit length of stencils 0.5 is computed:
-                    // all the clouds sizes are (2*250)x(2*250)x(2*250) ->
-                    // 500x500x500 (according to the "p0 [-1 -1 -1]" and "p1 [1
+                    // all the clouds sizes are (2*500)x(2*500)x(2*500) ->
+                    // 1000x1000x1000 (according to the "p0 [-1 -1 -1]" and "p1 [1
                     // 1 1]" attributes of the medium in pbrt files) here we
                     // align it with the z-direction length (4 since the stencil
                     // is 2x2x4) of the K=10 stencil, which gives the unit
-                    // length(for K=10) of 500/4=125. Then we have (1/2^9)*125 =
-                    // 0.25 for K=1 WZR: for recording
+                    // length(for K=10) of 1000/4=250. Then we have (1/2^9)*250 =
+                    // 0.5 for K=1 WZR: for recording
                     stencils.record(
                         &valData[seed * 256ULL * 2252 + tileSamplesN * 2252]);
                 }
@@ -567,6 +573,12 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     sum += L;
                     sqSum += L * L;
 
+                    // if (sum.MaxComponentValue() / count >= 1000) {
+                    //    arena.Reset();
+                    //    tileSampler->StartNextSample();
+                    //    break;
+                    //}
+
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
                     
@@ -617,6 +629,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 
                 // std::cout << "L: " << valData[2251] << std::endl;                 
                 // WZR: record multiple-scattered radiance
+                // if (sum[0] >= 1e10) 
+                //     std::cout << "Inf";
                 if (sum[0] / count != 0)
                     DsLMDB::tmpCount1();
                 else
@@ -637,9 +651,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
         if (writeData) {
             DsLMDB db;
             db.TxnWrite(valData, nT, tileSamplesNs, sizeof(Float) * 2252);
+            delete[] tileSamplesNs;
+            delete[] valData;
         }
-        delete[] tileSamplesNs;
-        delete[] valData;
 
         camera->printInfo();
         reporter.Done();
