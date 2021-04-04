@@ -27,13 +27,13 @@ Unfinished parts of the project
 
 Current Results
 --------------------
-Comparison on hg and Mie phase function
-![side_mie](https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_s_mie.png?raw=true "side_mie")
-![side_hg](https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_s_hg.png?raw=true "side_hg")
-![back_mie](https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_b_miefst.png?raw=true)
-![back_hg](https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_b_hg.png?raw=true "back_hg")
-![front_mie](https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_f_miefst.jpg?raw=true "front_mie")
-![front_hg](https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_f_hg.jpg?raw=true "front_hg")
+Comparison on hg and Mie phase function   
+side view  
+<img src="https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_s_mie.png?raw=true" width=50% height=50%><img src="https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_s_hg.png?raw=true" width=50% height=50%>  
+back view  
+<img src="https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_b_miefst.png?raw=true" width=50% height=50%><img src="https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_b_hg.png?raw=true" width=50% height=50%>  
+front view  
+<img src="https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_f_miefst.jpg?raw=true" width=50% height=50%><img src="https://github.com/LarsPh/deepscattering-pbrt/blob/data_generation/Gallery/irre_7_f_hg.jpg?raw=true" width=50% height=50%>
 
 Training result on a small dataset
 
