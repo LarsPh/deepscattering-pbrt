@@ -77,4 +77,4 @@ AttributeEnd
 ~~~
 
 ### Training the network
-    Run the python script "/deep_part/deep_scattering_cpu.py". Parameter "mapSize" stands for the size of data file. Use "convert_to_text.py" to visualize data files.
+  Run the python script "/deep_part/deep_scattering_cpu.py". Parameter "mapSize" stands for the size of data file. Use "convert_to_text.py" to visualize data files.
